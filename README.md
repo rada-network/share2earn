@@ -38,7 +38,7 @@ npx hardhat run scripts/MEOToken/deploy.js --network testnet
 // npx hardhat verify --network testnet TODO_token_address
 ```
 
-Build & Deploy BSC testnet | Valid User Contract
+NOT USE | Build & Deploy BSC testnet | Valid User Contract
 
 ```shell
 

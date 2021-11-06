@@ -1,14 +1,16 @@
 import React, { useState, useEffect } from "react"
-import { Tab, Box, Button,Snackbar, Card, Typography,CardActions, CardContent,Divider, DialogTitle,Dialog,List,ListItem } from "@mui/material"
+import { Box, Button,Snackbar, Card, Typography,CardActions, CardContent,Divider, List,ListItem, ListItemText } from "@mui/material"
 import { makeStyles } from '@mui/styles';
-import { TabContext, TabList, TabPanel } from "@mui/lab"
 import { useEthers } from "@usedapp/core"
+import { formatUnits } from "@ethersproject/units"
+import md5 from "md5"
+
 
 import { WalletBalance } from "./WalletBalance"
 import { ContractBalance } from "./ContractBalance"
 
 import config from "../../network-config"
-import { useContractMethod, useGetMyUid, useEnableValidUser,useDisableValidUser,useCheckJoin } from "../../hooks";
+import { useContractMethod, useGetProgram, useEnableValidUser,useDisableValidUser,useCheckJoin, useJoined } from "../../hooks";
 
 
 
@@ -18,6 +20,9 @@ const useStyles = makeStyles({
         flexDirection: "column",
         alignItems: "start",
         gap: 24
+    },
+    boxMain: {
+        paddingBottom: 20,
     },
     box: {
         padding: 16,
@@ -54,13 +59,13 @@ export const YourWallet = ({ supportedTokens }) => {
     const [errorMessage, setErrorMessage] = React.useState('');
 
     const { state: joinStateRIR, send: joinProgramRIR } = useContractMethod("joinProgram");
-    const { state: removeStateRIR, send: leaveProgramRIR } = useContractMethod("z_leaveProgram");
+    const { state: removeStateRIR, send: leaveProgramRIR } = useContractMethod("leaveProgram");
 
     const { state: joinStateMEO, send: joinProgramMEO } = useContractMethod("joinProgram");
-    const { state: removeStateMEO, send: leaveProgramMEO } = useContractMethod("z_leaveProgram");
+    const { state: removeStateMEO, send: leaveProgramMEO } = useContractMethod("leaveProgram");
 
     const { state: joinStateRIRII, send: joinProgramRIRII } = useContractMethod("joinProgram");
-    const { state: removeStateRIRII, send: leaveProgramRIRII } = useContractMethod("z_leaveProgram");
+    const { state: removeStateRIRII, send: leaveProgramRIRII } = useContractMethod("leaveProgram");
 
 
     const { state: enableState, send: enableValidUser } = useEnableValidUser();
@@ -68,10 +73,32 @@ export const YourWallet = ({ supportedTokens }) => {
 
     const defaultChainId = '97';
 
-    var myUid = useGetMyUid();
+    // const cookies = new Cookies();
+
+
+    /* const makeUid = (length) => {
+        var result           = '';
+        var characters       = 'abcdefghijklmnopqrstuvwxyz0123456789';
+        var charactersLength = characters.length;
+        for ( var i = 0; i < length; i++ ) {
+          result += characters.charAt(Math.floor(Math.random() *charactersLength));
+        }
+        return result;
+    } */
+
+    var myUid = account ? md5(account).substr(3,15): '';
+
+    var addressJoined = useJoined(myUid);
+    var joined = addressJoined && addressJoined!='0x0000000000000000000000000000000000000000';
+
     var joinedRIR = useCheckJoin("RIRProgram",myUid);
     var joinedMEO = useCheckJoin("MEOProgram",myUid);
     var joinedRIRII = useCheckJoin("RIRProgramII",myUid);
+
+    // Program information
+    var program1 = useGetProgram("RIRProgram");
+    var program2 = useGetProgram("MEOProgram");
+    var program3 = useGetProgram("RIRProgramII");
 
     useEffect(() => {
         if (joinStateRIR.status==="Success" || removeStateRIR.status==="Success" || joinStateMEO.status==="Success" || removeStateMEO.status==="Success" || joinStateRIRII.status==="Success" || removeStateRIRII.status==="Success" || enableState.status==="Success" || disableState.status==="Success" ) {
@@ -110,30 +137,24 @@ export const YourWallet = ({ supportedTokens }) => {
         var referral = url.searchParams.get("ref");
 
         if (program==='RIRProgram') {
-            joinProgramRIR(program, referral ?? '');
+            joinProgramRIR(program, myUid, referral ?? '');
         } else if (program==='MEOProgram') {
-            joinProgramMEO(program, referral ?? '');
+            joinProgramMEO(program, myUid, referral ?? '');
         }else if (program==='RIRProgramII') {
-            joinProgramRIRII(program, referral ?? '');
+            joinProgramRIRII(program, myUid, referral ?? '');
         }
     }
 
     const handleLeave = (program) => {
         if (program==='RIRProgram') {
-            // const addr = config[String(chainId)]["rir_token"]
             leaveProgramRIR(program);
         } else if (program==='MEOProgram') {
-            // const addr = config[String(chainId)]["meo_token"]
             leaveProgramMEO(program);
         } else if (program==='RIRProgramII') {
-            // const addr = config[String(chainId)]["meo_token"]
             leaveProgramRIRII(program);
         }
     }
-    const handleEnable = () => {
-        const uid = makeUid(12);
-        enableValidUser(account,uid);
-    }
+
     const handleDisable = () => {
         disableValidUser(account)
     }
@@ -142,44 +163,30 @@ export const YourWallet = ({ supportedTokens }) => {
         if (reason === 'clickaway') {
             return;
         }
-
+        setErrorMessage('');
     };
 
-    const makeUid = (length) => {
-        var result           = '';
-        var characters       = 'abcdefghijklmnopqrstuvwxyz0123456789';
-        var charactersLength = characters.length;
-        for ( var i = 0; i < length; i++ ) {
-          result += characters.charAt(Math.floor(Math.random() *charactersLength));
-        }
-        return result;
-    }
 
 
     const classes = useStyles()
 
 
     return (
-        <Box>
-            { account && <Box className={classes.box}>
+        <Box className={classes.boxMain}>
+            {account && <Box className={classes.box}>
             {account && <div> Your Wallet is {account}</div>}
             {myUid && <div className={classes.uid}>Your UID: <b>{myUid}</b></div> }
-            {account && !myUid && <Button variant="contained" onClick={handleEnable} disabled={enableState.status==="Mining"}>
+            {/* {account && !myUid && <Button variant="contained" onClick={handleEnable} disabled={enableState.status==="Mining"}>
                             Enable to be Valid User (for demo, admin will do this action) {enableState.status==="Mining" && ", please wait (30s)..."}
-                        </Button> }
-            {/* {account && myUid && <Button variant="contained" onClick={handleDisable}>
-                Disable me (for demo) {disableState.status==="Mining" && ", please wait (30s)..."}
-            </Button> } */}
-            {/* {token && <h3>Token RIR Address: {token}</h3> } */}
-            {/* {myUid && <h3>Referral Code: {myUid}</h3> } */}
-            {account && myUid && <div>Link referral: <b>{config.appUrl}/?ref={myUid}</b></div> }
+                        </Button> } */}
+            {account && joined && <div>Link referral: <br/><b>{config.appUrl}/?ref={myUid}</b></div> }
             </Box> }
             <Divider style={{marginTop: 16,marginBottom: 16}} />
             <Box className={classes.box} >
                 <h3>Your Balance</h3>
                 {supportedTokens.map((token, index) => {
                         return (
-                            <div className={classes.tabContent}>
+                            <div key={`your-balance-${index}`} className={classes.tabContent}>
                                 <WalletBalance token={supportedTokens[index]} />
                             </div>
                         )
@@ -187,7 +194,7 @@ export const YourWallet = ({ supportedTokens }) => {
                 <h3>Referral Contract Balance</h3>
                 {supportedTokens.map((token, index) => {
                         return (
-                            <div className={classes.tabContent}>
+                            <div key={`contract-balance-${index}`} className={classes.tabContent}>
                                 <ContractBalance token={supportedTokens[index]} account={config["97"]["referral_contract"]} />
                             </div>
                         )
@@ -199,9 +206,25 @@ export const YourWallet = ({ supportedTokens }) => {
                 <Typography align="left" variant="h5" component="div">
                 RADA Investment Program {bull} RIR Token
                 </Typography>
-                <Typography align="left" sx={{ mb: 1.5 }} color="text.secondary">
-                Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.
+                <Typography align="left" component="div">
+                Status: {program1 && program1.paused ? 'Stopped':'Running'}
                 </Typography>
+                <List dense={true}>
+                    <ListItem>
+                        <ListItemText
+                            primary="Incentive level 1"
+                            secondary={program1 && formatUnits(program1.incentiveL0, 18)}
+                        />
+                        <ListItemText
+                        primary="Incentive level 2"
+                        secondary={program1 && formatUnits(program1.incentiveL1, 18)}
+                    />
+                    <ListItemText
+                        primary="Incentive level 3"
+                        secondary={program1 && formatUnits(program1.incentiveL2, 18)}
+                    />
+                    </ListItem>
+                </List>
                 </CardContent>
                 <CardActions className={classes.rightAlignItem} >
                     {account && !joinedRIR && <Button disabled={!myUid || joinStateRIR.status==="Mining"} variant="contained" onClick={(e) => handleJoinProgram('RIRProgram',e)}>
@@ -220,9 +243,25 @@ export const YourWallet = ({ supportedTokens }) => {
                 <Typography align="left" variant="h5" component="div">
                 MEO IDO Program {bull} MEO Token
                 </Typography>
-                <Typography align="left" sx={{ mb: 1.5 }} color="text.secondary">
-                Neque porro quisquam est qui dolorem ipsum quia dolor sit amet, consectetur, adipisci velit...
+                <Typography align="left" component="div">
+                Status: {program2 && program2.paused ? 'Stopped':'Running'}
                 </Typography>
+                <List dense={true}>
+                    <ListItem>
+                        <ListItemText
+                            primary="Incentive level 1"
+                            secondary={program2 && formatUnits(program2.incentiveL0, 18)}
+                        />
+                        <ListItemText
+                        primary="Incentive level 2"
+                        secondary={program2 && formatUnits(program2.incentiveL1, 18)}
+                    />
+                    <ListItemText
+                        primary="Incentive level 3"
+                        secondary={program2 && formatUnits(program2.incentiveL2, 18)}
+                    />
+                    </ListItem>
+                </List>
                 </CardContent>
                 <CardActions className={classes.rightAlignItem} >
                     {account && !joinedMEO && <Button disabled={!myUid || joinStateMEO.status==="Mining"} variant="contained" onClick={(e) => handleJoinProgram('MEOProgram',e)}>
@@ -241,9 +280,25 @@ export const YourWallet = ({ supportedTokens }) => {
                 <Typography align="left" variant="h5" component="div">
                 RADA Investment Program version II {bull} RIR Token
                 </Typography>
-                <Typography align="left" sx={{ mb: 1.5 }} color="text.secondary">
-                Version II. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.
+                <Typography align="left" component="div">
+                Status: {program3 && program3.paused ? 'Stopped':'Running'}
                 </Typography>
+                <List dense={true}>
+                    <ListItem>
+                        <ListItemText
+                            primary="Incentive level 1"
+                            secondary={program2 && formatUnits(program2.incentiveL0, 18)}
+                        />
+                        <ListItemText
+                        primary="Incentive level 2"
+                        secondary={program2 && formatUnits(program2.incentiveL1, 18)}
+                    />
+                    <ListItemText
+                        primary="Incentive level 3"
+                        secondary={program2 && formatUnits(program2.incentiveL2, 18)}
+                    />
+                    </ListItem>
+                </List>
                 </CardContent>
                 <CardActions className={classes.rightAlignItem} >
                     {account && !joinedRIRII && <Button disabled={!myUid || joinStateRIRII.status==="Mining"} variant="contained" onClick={(e) => handleJoinProgram('RIRProgramII',e)}>

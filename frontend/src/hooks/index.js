@@ -23,7 +23,7 @@ export function useContractMethod(methodName) {
   const { state, send } = useContractFunction(contract, methodName);
 
     //useEffect
-    /* useEffect(() => {
+    /* useEffect(() => {referralContractInterface
       console.log(state);
     }, [state]) */
 
@@ -64,22 +64,7 @@ export function useTokenAddress() {
   return token;
 }
 
-/*
-// WORK GOOD
-export function useGetMyUid() {
-
-  const { chainId, account } = useEthers()
-  const contractAddress = chainId ? networkMapping[String(chainId)]["referral_contract"] : constants.AddressZero
-
-  const [uid] = useContractCall({
-    abi: referralContractInterface,
-    address: contractAddress,
-    method: "getUserUid",
-    args: [account],
-  }) ?? [];
-  return uid;
-} */
-export function useGetMyUid() {
+/* export function useGetMyUid() {
 
   const { account } = useEthers()
   const defaultChainId = '97';
@@ -92,37 +77,52 @@ export function useGetMyUid() {
     args: [account],
   }) ?? [];
   return uid;
+} */
+export function useGetProgram(code) {
+
+  const { account } = useEthers()
+  const defaultChainId = '97';
+
+  const contractAddress = networkMapping[defaultChainId]["referral_contract"];
+  const [program] = useContractCall(account && {
+    abi: referralContractInterface,
+    address: contractAddress,
+    method: "getInfoProgram",
+    args: [code],
+  }) ?? [];
+  return program;
 }
 
-/* export function useCheckJoin(tokenAddress) {
+export function useJoined(uid) {
+
   const defaultChainId = '97';
   const contractAddress = networkMapping[defaultChainId]["referral_contract"];
 
-  const [joined] = useContractCall({
+  const [addressJoined] = useContractCall(uid && {
     abi: referralContractInterface,
     address: contractAddress,
-    method: "checkMyJoined",
-    args: [tokenAddress],
+    method: "userJoined",
+    args: [uid],
   }) ?? [];
 
-  return joined;
-} */
+  return addressJoined;
+}
+export function useJoinedAddress() {
+  const { account } = useEthers()
 
-/* export function useCheckJoin(tokenAddress) {
-
-  const { account, chainId } = useEthers()
   const defaultChainId = '97';
   const contractAddress = networkMapping[defaultChainId]["referral_contract"];
 
-  const [joined] = useContractCall(account && {
+  const [uid] = useContractCall(account && {
     abi: referralContractInterface,
     address: contractAddress,
-    method: "checkJoined",
-    args: [tokenAddress,account],
+    method: "addressJoined",
+    args: [account],
   }) ?? [];
 
-  return joined;
-} */
+  return uid;
+}
+
 
 export function useCheckJoin(programCode,uid) {
 
@@ -138,18 +138,3 @@ export function useCheckJoin(programCode,uid) {
 
   return joined;
 }
-
-// export { useGetCode } from "./useGetCode"
-
-/* export function useContractMethod(methodName,args = {}) {
-  const { state, send } = useContractFunction(contract, "incrementCount", {});
-  return { state, send };
-} */
-
-/* export { useGetCode } from "./useGetCode"
-export { useJoinProgram } from "./useJoinProgram"
-export { useRemoveMyCode } from "./useRemoveMyCode"
-export { ExecuteContract } from "./ExecuteContract"
-export { useContractMethod } from "./useContractMethod" */
-
-
