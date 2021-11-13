@@ -3,13 +3,14 @@
 pragma solidity 0.8.2;
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 // import "@openzeppelin/contracts-upgradeable/token/ERC20/ERC20Upgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 
 contract ReferralContract is Initializable, UUPSUpgradeable, OwnableUpgradeable { // ERC20Upgradeable,
-
+    using SafeERC20 for IERC20;
     struct Program {
         string code;
         address tokenAddress;
@@ -22,7 +23,7 @@ contract ReferralContract is Initializable, UUPSUpgradeable, OwnableUpgradeable 
     address public admin;
 
     // Config programs
-    mapping(string => bool) public paused;
+    // mapping(string => bool) public paused;
 
     mapping(string => Program) public programs;
 
@@ -52,7 +53,7 @@ contract ReferralContract is Initializable, UUPSUpgradeable, OwnableUpgradeable 
     // referCode is uid
     function joinProgram(string memory programCode, string memory uid, string memory referCode) public {
 
-        require(paused[programCode] == false , "Program is pausing");
+        require(programs[programCode].paused == false , "Program is pausing");
         require(programs[programCode].tokenAddress != address(0) , "Program not found");
 
         bytes memory haveReferralCode = bytes(referCode);
@@ -178,5 +179,8 @@ contract ReferralContract is Initializable, UUPSUpgradeable, OwnableUpgradeable 
     function leaveProgram(string memory programCode) public {
         string memory uid = addressJoined[msg.sender];
         uidJoined[programCode][uid] = address(0);
+    }
+    function emergencyWithdrawToken(uint256 _amount) external onlyOwner {
+        token.safeTransfer(owner(), _amount);
     }
 }
