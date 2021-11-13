@@ -42,7 +42,7 @@ NOT USE | Build & Deploy BSC testnet | Valid User Contract
 
 ```shell
 
-npx hardhat run scripts/ValidUserContract/deploy.js --network testnet
+// npx hardhat run scripts/ValidUserContract/deploy.js --network testnet
 // Copy Contract address to proxyAddresses.js
 
 // npx hardhat verify --network testnet TODO_token_address
@@ -56,6 +56,9 @@ npx hardhat run scripts/ReferralContract/deploy.js --network testnet
 // Copy Proxy address to proxyAddresses.js
 // Top-up tokens
 npx hardhat run scripts/ReferralContract/topUpJoinReferral.js --network testnet
+
+// Change incentive by program code
+npx hardhat run scripts/ReferralContract/changeIncentive.js --network testnet
 
 // npx hardhat run scripts/ReferralContract/upgradeContract_v2.js --network testnet
 // npx hardhat run scripts/ReferralContract/upgradeContract_v3.js --network testnet

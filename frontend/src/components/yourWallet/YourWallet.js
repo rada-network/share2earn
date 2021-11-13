@@ -95,6 +95,13 @@ export const YourWallet = ({ supportedTokens }) => {
     var joinedMEO = useCheckJoin("MEOProgram",myUid);
     var joinedRIRII = useCheckJoin("RIRProgramII",myUid);
 
+    if (joinedRIR=="0x0000000000000000000000000000000000000000")
+        joinedRIR = null;
+    if (joinedMEO=="0x0000000000000000000000000000000000000000")
+        joinedMEO = null;
+    if (joinedRIRII=="0x0000000000000000000000000000000000000000")
+        joinedRIRII = null;
+
     // Program information
     var program1 = useGetProgram("RIRProgram");
     var program2 = useGetProgram("MEOProgram");
@@ -166,10 +173,7 @@ export const YourWallet = ({ supportedTokens }) => {
         setErrorMessage('');
     };
 
-
-
     const classes = useStyles()
-
 
     return (
         <Box className={classes.boxMain}>
@@ -204,25 +208,25 @@ export const YourWallet = ({ supportedTokens }) => {
             <Card sx={{ minWidth: 275 }}>
                 <CardContent>
                 <Typography align="left" variant="h5" component="div">
-                RADA Investment Program {bull} RIR Token
+                RADA Investment Program {bull} RIR Token #{program1.code}
                 </Typography>
                 <Typography align="left" component="div">
-                Status: {program1 && program1.paused ? 'Stopped':'Running'}
+                Status: {Object.keys(program1).length >0  && program1.paused ? 'Stopped':'Running'}
                 </Typography>
                 <List dense={true}>
                     <ListItem>
                         <ListItemText
                             primary="Incentive level 1"
-                            secondary={program1 && formatUnits(program1.incentiveL0, 18)}
+                            secondary={Object.keys(program1).length >0 && formatUnits(program1.incentiveL0, 18)}
                         />
                         <ListItemText
                         primary="Incentive level 2"
-                        secondary={program1 && formatUnits(program1.incentiveL1, 18)}
-                    />
-                    <ListItemText
-                        primary="Incentive level 3"
-                        secondary={program1 && formatUnits(program1.incentiveL2, 18)}
-                    />
+                        secondary={Object.keys(program1).length >0 && formatUnits(program1.incentiveL1, 18)}
+                        />
+                        <ListItemText
+                            primary="Incentive level 3"
+                            secondary={Object.keys(program1).length >0 && formatUnits(program1.incentiveL2, 18)}
+                        />
                     </ListItem>
                 </List>
                 </CardContent>
@@ -241,24 +245,24 @@ export const YourWallet = ({ supportedTokens }) => {
             <Card sx={{ minWidth: 275 }}>
                 <CardContent>
                 <Typography align="left" variant="h5" component="div">
-                MEO IDO Program {bull} MEO Token
+                MEO IDO Program {bull} MEO Token #{program2.code}
                 </Typography>
                 <Typography align="left" component="div">
-                Status: {program2 && program2.paused ? 'Stopped':'Running'}
+                Status: {Object.keys(program2).length >0 && program2.paused ? 'Stopped':'Running'}
                 </Typography>
                 <List dense={true}>
                     <ListItem>
                         <ListItemText
                             primary="Incentive level 1"
-                            secondary={program2 && formatUnits(program2.incentiveL0, 18)}
+                            secondary={Object.keys(program2).length >0 && formatUnits(program2.incentiveL0, 18)}
                         />
                         <ListItemText
                         primary="Incentive level 2"
-                        secondary={program2 && formatUnits(program2.incentiveL1, 18)}
+                        secondary={Object.keys(program2).length >0 && formatUnits(program2.incentiveL1, 18)}
                     />
                     <ListItemText
                         primary="Incentive level 3"
-                        secondary={program2 && formatUnits(program2.incentiveL2, 18)}
+                        secondary={Object.keys(program2).length >0 && formatUnits(program2.incentiveL2, 18)}
                     />
                     </ListItem>
                 </List>
@@ -278,7 +282,7 @@ export const YourWallet = ({ supportedTokens }) => {
             <Card sx={{ minWidth: 275 }}>
                 <CardContent>
                 <Typography align="left" variant="h5" component="div">
-                RADA Investment Program version II {bull} RIR Token
+                RADA Investment Program version II {bull} RIR Token #{program3.code}
                 </Typography>
                 <Typography align="left" component="div">
                 Status: {program3 && program3.paused ? 'Stopped':'Running'}
@@ -287,15 +291,15 @@ export const YourWallet = ({ supportedTokens }) => {
                     <ListItem>
                         <ListItemText
                             primary="Incentive level 1"
-                            secondary={program2 && formatUnits(program2.incentiveL0, 18)}
+                            secondary={Object.keys(program3).length >0 && formatUnits(program3.incentiveL0, 18)}
                         />
                         <ListItemText
                         primary="Incentive level 2"
-                        secondary={program2 && formatUnits(program2.incentiveL1, 18)}
+                        secondary={Object.keys(program3).length >0 && formatUnits(program3.incentiveL1, 18)}
                     />
                     <ListItemText
                         primary="Incentive level 3"
-                        secondary={program2 && formatUnits(program2.incentiveL2, 18)}
+                        secondary={Object.keys(program3).length >0 && formatUnits(program3.incentiveL2, 18)}
                     />
                     </ListItem>
                 </List>

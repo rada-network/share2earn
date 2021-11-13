@@ -34,9 +34,11 @@ describe("Referral contract", function () {
 
   });
 
+  /*
+  // Contract don't have owner
   it('Deploy v1 and should set right owner', async function () {
-    expect(await contract.admin()).to.equal(owner.address);
-  });
+    expect(await contract.owner()).to.equal(owner.address);
+  }); */
   /* it('Upgrade v2', async function () {
     const contract = await upgrades.deployProxy(ReferralContract, [validUserContract.address], { kind: 'uups' });
     const contractV2 = await upgrades.upgradeProxy(contract, ContractV2);
@@ -57,9 +59,14 @@ describe("Referral contract", function () {
 
   it('Should add new program', async function () {
 
-    await contract.addProgram("RIRProgram", rirToken.address);
+    const code = "RIRProgram";
+    await contract.addProgram(code, rirToken.address);
     var program = await contract.programs("RIRProgram");
     await expect(program.tokenAddress).to.equal(rirToken.address);
+
+    // Get info program
+    var p = await contract.getInfoProgram(code);
+    await expect(p.code).to.equal(code);
   });
   it('Should change incentives', async function () {
 
@@ -67,7 +74,9 @@ describe("Referral contract", function () {
     await contract.setIncentiveAmountL0("RIRProgram", 100);
     await contract.setIncentiveAmountL1("RIRProgram", 50);
     await contract.setIncentiveAmountL2("RIRProgram", 30);
+
     var program = await contract.programs("RIRProgram");
+
     await expect(program.incentiveL0).to.equal(100);
     await expect(program.incentiveL1).to.equal(50);
     await expect(program.incentiveL2).to.equal(30);
@@ -323,5 +332,20 @@ describe("Referral contract", function () {
     await expect(contract.connect(addr2).joinProgram("RIRProgram", uid2, uid1)).to.not.be.reverted;
     // User B want cheating, create difference uid
     await expect(contract.connect(addr2).joinProgram("RIRProgram", uid3, uid1)).to.be.reverted;
+  });
+
+  it('Should withdraw an amount token in emergency', async function () {
+    var contractBalance = await rirToken.balanceOf(contract.address);
+    expect(contractBalance).to.equal(ethers.utils.parseUnits( "100" , 18 ));
+
+    const tokenWithdraw = ethers.utils.parseUnits( "50" , 18 );
+
+    await expect(contract.connect(addr2).emergencyWithdrawToken(tokenWithdraw)).to.be.reverted;
+
+    await contract.connect(owner).emergencyWithdrawToken(rirToken.address, tokenWithdraw);
+
+    contractBalance = await rirToken.balanceOf(contract.address);
+    expect(contractBalance).to.equal(tokenWithdraw);
+
   });
 });

@@ -84,13 +84,13 @@ export function useGetProgram(code) {
   const defaultChainId = '97';
 
   const contractAddress = networkMapping[defaultChainId]["referral_contract"];
-  const [program] = useContractCall(account && {
+  const program = useContractCall(account && {
     abi: referralContractInterface,
     address: contractAddress,
     method: "getInfoProgram",
     args: [code],
   }) ?? [];
-  return program;
+  return program==[] ? null : program;
 }
 
 export function useJoined(uid) {

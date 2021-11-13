@@ -23,11 +23,11 @@ async function main() {
 
   const referralContract = await ethers.getContractAt("ReferralContract",referralAddress);
   await referralContract.addProgram("RIRProgram",rirAddresses[network]);
-  console.log("RIRProgram joined");
+  console.log("RIRProgram added");
   await referralContract.addProgram("MEOProgram",meoAddresses[network]);
-  console.log("MEOProgram joined");
+  console.log("MEOProgram added");
   await referralContract.addProgram("RIRProgramII",rirAddresses[network]);
-  console.log("RIRProgramII joined");
+  console.log("RIRProgramII added");
 
 }
 

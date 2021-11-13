@@ -2,15 +2,16 @@
 // pragma solidity >=0.8.0 <=0.8.4;
 pragma solidity 0.8.2;
 
-import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+// import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+// import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import "@openzeppelin/contracts-upgradeable/token/ERC20/IERC20Upgradeable.sol";
+import "@openzeppelin/contracts-upgradeable/token/ERC20/utils/SafeERC20Upgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
-// import "@openzeppelin/contracts-upgradeable/token/ERC20/ERC20Upgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 
 contract ReferralContract is Initializable, UUPSUpgradeable, OwnableUpgradeable { // ERC20Upgradeable,
-    using SafeERC20 for IERC20;
+    using SafeERC20Upgradeable for IERC20Upgradeable;
     struct Program {
         string code;
         address tokenAddress;
@@ -20,7 +21,7 @@ contract ReferralContract is Initializable, UUPSUpgradeable, OwnableUpgradeable 
         bool paused;
     }
 
-    address public admin;
+    // address public admin;
 
     // Config programs
     // mapping(string => bool) public paused;
@@ -34,7 +35,7 @@ contract ReferralContract is Initializable, UUPSUpgradeable, OwnableUpgradeable 
     mapping(string => address) public userJoined; // uid => user address
     mapping(address => string) public addressJoined; // user address => uid
 
-    IERC20 public token;
+    IERC20Upgradeable public token;
 
     // DEBUG
     string public debug;
@@ -42,7 +43,7 @@ contract ReferralContract is Initializable, UUPSUpgradeable, OwnableUpgradeable 
     function initialize() initializer public {
         __Ownable_init();
 
-        admin = msg.sender;
+        // admin = msg.sender;
     }
 
     /// @custom:oz-upgrades-unsafe-allow constructor
@@ -83,7 +84,7 @@ contract ReferralContract is Initializable, UUPSUpgradeable, OwnableUpgradeable 
 
             if (allowIncentive) {
                 address tokenAddress = programs[programCode].tokenAddress;
-                token = IERC20(tokenAddress);
+                token = IERC20Upgradeable(tokenAddress);
                 // Assign new address to ReferralUser
                 rUserFromUser[programCode][msg.sender] = referOwner;
                 // User follow
@@ -142,7 +143,7 @@ contract ReferralContract is Initializable, UUPSUpgradeable, OwnableUpgradeable 
 
     // Allow owner transfer back Token
     function transferBack(address tokenAddress, uint amount) onlyOwner public {
-        token = IERC20(tokenAddress);
+        token = IERC20Upgradeable(tokenAddress);
         require(token.balanceOf(address(this)) > amount , "Amount exceeds");
         token.transfer(msg.sender, amount);
     }
@@ -172,15 +173,17 @@ contract ReferralContract is Initializable, UUPSUpgradeable, OwnableUpgradeable 
     function checkJoined(string memory programCode, address userAddress) public view returns (bool) {
         return rUserFromUser[programCode][userAddress] != address(0);
     }
-    function getInfoProgram(string memory programCode) public view returns (Program memory) {
-        Program memory program = programs[programCode];
-        return program;
+    function getInfoProgram(string memory programCode) public view returns (string memory code, address tokenAddress, uint incentiveL0, uint incentiveL1, uint incentiveL2, bool paused) {
+        Program memory p = programs[programCode];
+        return (p.code, p.tokenAddress, p.incentiveL0, p.incentiveL1, p.incentiveL2, p.paused);
     }
     function leaveProgram(string memory programCode) public {
         string memory uid = addressJoined[msg.sender];
+        require(uidJoined[programCode][uid] != address(0) , "Account not found");
         uidJoined[programCode][uid] = address(0);
     }
-    function emergencyWithdrawToken(uint256 _amount) external onlyOwner {
+    function emergencyWithdrawToken(address tokenAddress, uint256 _amount) external onlyOwner {
+        token = IERC20Upgradeable(tokenAddress);
         token.safeTransfer(owner(), _amount);
     }
 }

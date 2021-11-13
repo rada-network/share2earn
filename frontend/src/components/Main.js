@@ -73,11 +73,11 @@ export const Main = () => {
                     }>
                         <ListItemText primary={referralContractAddress} secondary="Referral Contract" />
                     </ListItem>
-                    <ListItem secondaryAction={
+                    {/* <ListItem secondaryAction={
                         <Link href={`https://testnet.bscscan.com/address/${validUserContractAddress}`} target="_blank">view</Link>
                     }>
                         <ListItemText primary={validUserContractAddress} secondary="Valid User Contract" />
-                    </ListItem>
+                    </ListItem> */}
                     <ListItem secondaryAction={
                         <Link href={`https://testnet.bscscan.com/address/${rirTokenAddress}`} target="_blank">view</Link>
                     }>
