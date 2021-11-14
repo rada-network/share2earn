@@ -182,6 +182,10 @@ contract ReferralContract is Initializable, UUPSUpgradeable, OwnableUpgradeable 
         require(uidJoined[programCode][uid] != address(0) , "Account not found");
         uidJoined[programCode][uid] = address(0);
     }
+    function removeJoinProgram(string memory programCode, string memory uid) public onlyOwner {
+        require(uidJoined[programCode][uid] != address(0) , "Account not found");
+        uidJoined[programCode][uid] = address(0);
+    }
     function emergencyWithdrawToken(address tokenAddress, uint256 _amount) external onlyOwner {
         token = IERC20Upgradeable(tokenAddress);
         token.safeTransfer(owner(), _amount);
