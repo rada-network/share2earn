@@ -58,6 +58,10 @@ export const YourWallet = ({ supportedTokens }) => {
     const { chainId, account } = useEthers()
     const [errorMessage, setErrorMessage] = React.useState('');
 
+    const { state: joinStatePGX, send: joinProgramPGX } = useContractMethod("joinProgram");
+    const { state: removeStatePGX, send: leaveProgramPGX } = useContractMethod("leaveProgram");
+
+
     const { state: joinStateRIR, send: joinProgramRIR } = useContractMethod("joinProgram");
     const { state: removeStateRIR, send: leaveProgramRIR } = useContractMethod("leaveProgram");
 
@@ -94,6 +98,7 @@ export const YourWallet = ({ supportedTokens }) => {
     var joinedRIR = useCheckJoin("RIRProgram",myUid);
     var joinedMEO = useCheckJoin("MEOProgram",myUid);
     var joinedRIRII = useCheckJoin("RIRProgramII",myUid);
+    var joinedPGX = useCheckJoin("RIRProgram",myUid);
 
     if (joinedRIR=="0x0000000000000000000000000000000000000000")
         joinedRIR = null;
@@ -101,21 +106,25 @@ export const YourWallet = ({ supportedTokens }) => {
         joinedMEO = null;
     if (joinedRIRII=="0x0000000000000000000000000000000000000000")
         joinedRIRII = null;
-
+    if (joinedPGX=="0x0000000000000000000000000000000000000000")
+        joinedPGX = null;
     // Program information
     var program1 = useGetProgram("RIRProgram");
     var program2 = useGetProgram("MEOProgram");
     var program3 = useGetProgram("RIRProgramII");
+    var programPGX = useGetProgram("PGX");
 
     useEffect(() => {
-        if (joinStateRIR.status==="Success" || removeStateRIR.status==="Success" || joinStateMEO.status==="Success" || removeStateMEO.status==="Success" || joinStateRIRII.status==="Success" || removeStateRIRII.status==="Success" || enableState.status==="Success" || disableState.status==="Success" ) {
+        if (joinStatePGX.status==="Success" || joinStateRIR.status==="Success" || removeStateRIR.status==="Success" || joinStateMEO.status==="Success" || removeStateMEO.status==="Success" || joinStateRIRII.status==="Success" || removeStateRIRII.status==="Success" || enableState.status==="Success" || disableState.status==="Success" ) {
             // window.location.reload();
         } else if (joinStateRIR.status==="Exception") {
             setErrorMessage(joinStateRIR.errorMessage);
         } else if (joinStateMEO.status==="Exception") {
             setErrorMessage(joinStateMEO.errorMessage);
-        }else if (joinStateRIRII.status==="Exception") {
+        } else if (joinStateRIRII.status==="Exception") {
             setErrorMessage(joinStateRIRII.errorMessage);
+        } else if (joinStatePGX.status==="Exception") {
+            setErrorMessage(joinStatePGX.errorMessage);
         }
 
         if (removeStateRIR.status==="Exception") {
@@ -128,9 +137,11 @@ export const YourWallet = ({ supportedTokens }) => {
             setErrorMessage(disableState.errorMessage);
         } else if (removeStateRIRII.status==="Exception") {
             setErrorMessage(removeStateRIRII.errorMessage);
+        }else if (removeStatePGX.status==="Exception") {
+            setErrorMessage(removeStatePGX.errorMessage);
         }
 
-    }, [joinStateRIR, removeStateRIR,joinStateMEO,removeStateMEO, joinStateRIRII, removeStateRIRII,enableState,disableState])
+    }, [joinStatePGX, removeStatePGX,joinStateRIR, removeStateRIR,joinStateMEO,removeStateMEO, joinStateRIRII, removeStateRIRII,enableState,disableState])
 
     const [selectedTokenIndex, setSelectedTokenIndex] = useState(0)
 
@@ -147,8 +158,10 @@ export const YourWallet = ({ supportedTokens }) => {
             joinProgramRIR(program, myUid, referral ?? '');
         } else if (program==='MEOProgram') {
             joinProgramMEO(program, myUid, referral ?? '');
-        }else if (program==='RIRProgramII') {
+        } else if (program==='RIRProgramII') {
             joinProgramRIRII(program, myUid, referral ?? '');
+        } else if (program==='PGX') {
+            joinProgramPGX(program, myUid, referral ?? '');
         }
     }
 
@@ -159,6 +172,8 @@ export const YourWallet = ({ supportedTokens }) => {
             leaveProgramMEO(program);
         } else if (program==='RIRProgramII') {
             leaveProgramRIRII(program);
+        } else if (program==='PGX') {
+            leaveProgramPGX(program);
         }
     }
 
@@ -204,6 +219,43 @@ export const YourWallet = ({ supportedTokens }) => {
                         )
                 })}
             </Box>
+            <Divider style={{marginTop: 16,marginBottom: 16}} />
+            <Card sx={{ minWidth: 275 }}>
+                <CardContent>
+                <Typography align="left" variant="h5" component="div">
+                Pegaxy {bull} RIR Token #{programPGX.code}
+                </Typography>
+                <Typography align="left" component="div">
+                Status: {Object.keys(programPGX).length >0  && programPGX.paused ? 'Stopped':'Running'}
+                </Typography>
+                <List dense={true}>
+                    <ListItem>
+                        <ListItemText
+                            primary="Incentive level 1"
+                            secondary={Object.keys(programPGX).length >0 && formatUnits(programPGX.incentiveL0, 18)}
+                        />
+                        <ListItemText
+                        primary="Incentive level 2"
+                        secondary={Object.keys(programPGX).length >0 && formatUnits(programPGX.incentiveL1, 18)}
+                        />
+                        <ListItemText
+                            primary="Incentive level 3"
+                            secondary={Object.keys(programPGX).length >0 && formatUnits(programPGX.incentiveL2, 18)}
+                        />
+                    </ListItem>
+                </List>
+                </CardContent>
+                <CardActions className={classes.rightAlignItem} >
+                    {account && !joinedPGX && <Button disabled={!myUid || joinStatePGX.status==="Mining"} variant="contained" onClick={(e) => handleJoinProgram('PGX',e)}>
+                            Join Program {joinStatePGX.status==="Mining" && ", joining (30s)..."}
+                        </Button>
+                    }
+                    {account && joinedPGX && <Button disabled={removeStatePGX.status==="Mining"} variant="contained" onClick={(e) => handleLeave('PGX')} color="warning">
+                        Leave (for demo) {removeStatePGX.status==="Mining" && "Leaving  (30s)..."}
+                        </Button>
+                    }
+                </CardActions>
+            </Card>
             <Divider style={{marginTop: 16,marginBottom: 16}} />
             <Card sx={{ minWidth: 275 }}>
                 <CardContent>
