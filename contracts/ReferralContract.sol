@@ -10,40 +10,39 @@ import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 
-contract ReferralContract is Initializable, UUPSUpgradeable, OwnableUpgradeable { // ERC20Upgradeable,
+contract ReferralContract is Initializable, UUPSUpgradeable, OwnableUpgradeable {
     using SafeERC20Upgradeable for IERC20Upgradeable;
+
     struct Program {
         string code;
         address tokenAddress;
-        uint incentiveL0;
-        uint incentiveL1;
-        uint incentiveL2;
+        uint256 incentiveL0;
+        uint256 incentiveL1;
+        uint256 incentiveL2;
         bool paused;
     }
 
-    // address public admin;
-
-    // Config programs
-    // mapping(string => bool) public paused;
+    mapping(address => bool) public admins;
 
     mapping(string => Program) public programs;
 
     // Config users
     mapping(string => mapping(string => address)) public uidJoined; // program code => uid => sender address
-    mapping(string => mapping(address => address)) public rUserFromUser; // program code => sender address => refer address
-    mapping(string => mapping(address => address[])) public userFollowers; // program code => refer address  => user address[]
+    mapping(string => mapping(address => address)) public rUserFromReferer; // program code => sender address => referrer address
+    mapping(string => mapping(address => address[])) public userReferees; // program code => referrer address  => user address[]
     mapping(string => address) public userJoined; // uid => user address
     mapping(address => string) public addressJoined; // user address => uid
 
-    IERC20Upgradeable public token;
+    mapping(string => string[]) public holdReferrer; // programCode => referrer have incentive hold
+    mapping(string => mapping(string => uint256)) public incentiveHold; // programCode => referrer uid => incentive hold
 
-    // DEBUG
-    string public debug;
+    IERC20Upgradeable public token;
 
     function initialize() initializer public {
         __Ownable_init();
 
-        // admin = msg.sender;
+        // Grant the approval role to a specified account
+        admins[owner()] = true;
     }
 
     /// @custom:oz-upgrades-unsafe-allow constructor
@@ -51,65 +50,76 @@ contract ReferralContract is Initializable, UUPSUpgradeable, OwnableUpgradeable 
 
     function _authorizeUpgrade(address) internal override onlyOwner {}
 
-    // referCode is uid
-    function joinProgram(string memory programCode, string memory uid, string memory referCode) public {
+    // referrerCode is uid
+    function joinProgram(string memory _programCode, string memory _uid, string memory _referrerCode) public {
 
-        require(programs[programCode].paused == false , "Program is pausing");
-        require(programs[programCode].tokenAddress != address(0) , "Program not found");
+        require(programs[_programCode].paused == false , "Program is pausing");
+        require(programs[_programCode].tokenAddress != address(0) , "Program not found");
 
-        bytes memory haveReferralCode = bytes(referCode);
+        bytes memory haveReferralCode = bytes(_referrerCode);
         if (haveReferralCode.length > 0) {
-            require(keccak256(bytes(uid)) != keccak256(bytes(referCode)), "Cannot join yourself");
+            require(keccak256(bytes(_uid)) != keccak256(bytes(_referrerCode)), "Cannot join yourself");
 
-            require(userJoined[referCode] != address(0), "Wrong refer code");
+            require(userJoined[_referrerCode] != address(0), "Wrong referrer code");
         }
 
-        require(uidJoined[programCode][uid] == address(0) , "User joined");
+        require(uidJoined[_programCode][_uid] == address(0) , "User joined");
 
         // Validate, check this address joined but uid not the same
-        if (rUserFromUser[programCode][msg.sender] != address(0)) {
-            require(keccak256(bytes(uid)) == keccak256(bytes(addressJoined[msg.sender])) , "This uid used other address");
+        if (rUserFromReferer[_programCode][msg.sender] != address(0)) {
+            require(keccak256(bytes(_uid)) == keccak256(bytes(addressJoined[msg.sender])) , "This uid used other address");
         }
         // Claim reward to Referral
         if (haveReferralCode.length > 0) {
-            // Owner of refer code
-            address referOwner = userJoined[referCode];
+            // Owner of referrer code
+            address referrerAddress = userJoined[_referrerCode];
 
             bool allowIncentive = true;
 
-            // if refer owner already got incentive from this sender then return
-            if (rUserFromUser[programCode][msg.sender] != address(0)) {
+            // if referrer owner already got incentive from this sender then return
+            if (rUserFromReferer[_programCode][msg.sender] != address(0)) {
                 allowIncentive = false;
             }
 
             if (allowIncentive) {
-                address tokenAddress = programs[programCode].tokenAddress;
+                address tokenAddress = programs[_programCode].tokenAddress;
                 token = IERC20Upgradeable(tokenAddress);
                 // Assign new address to ReferralUser
-                rUserFromUser[programCode][msg.sender] = referOwner;
+                rUserFromReferer[_programCode][msg.sender] = referrerAddress;
                 // User follow
-                userFollowers[programCode][referOwner].push(msg.sender);
+                userReferees[_programCode][referrerAddress].push(msg.sender);
 
                 // Pay for level up 1
-                if (programs[programCode].incentiveL0 > 0) {
-                    token.transfer(referOwner, programs[programCode].incentiveL0);
+                // Hold incentive
+                if (incentiveHold[_programCode][_referrerCode]==0) {
+                    holdReferrer[_programCode].push(_referrerCode);
                 }
-
-                debug = 'allowIncentive';
+                incentiveHold[_programCode][_referrerCode] += programs[_programCode].incentiveL0;
+                //token.transfer(referrerAddress, programs[_programCode].incentiveL0);
 
                 // Check Level 1 up
-                address userL0 = rUserFromUser[programCode][referOwner];
+                address userL0 = rUserFromReferer[_programCode][referrerAddress];
                 if (userL0 != address(0)) {
                     // Pay for level up 2
-                    if (programs[programCode].incentiveL1>0)
-                        token.transfer(userL0, programs[programCode].incentiveL1);
+                    // Hold incentive
+                    if (incentiveHold[_programCode][addressJoined[userL0]]==0) {
+                        holdReferrer[_programCode].push(addressJoined[userL0]);
+                    }
+                    incentiveHold[_programCode][addressJoined[userL0]] += programs[_programCode].incentiveL1;
+
+                    // token.transfer(userL0, programs[_programCode].incentiveL1);
 
                     // Level 2 up
-                    address userL1 = rUserFromUser[programCode][userL0];
+                    address userL1 = rUserFromReferer[_programCode][userL0];
                     if (userL1 != address(0)) {
                         // Pay for level up 3
-                        if (programs[programCode].incentiveL2>0)
-                        token.transfer(userL1, programs[programCode].incentiveL2);
+                        // Hold incentive
+                        if (incentiveHold[_programCode][addressJoined[userL1]]==0) {
+                            holdReferrer[_programCode].push(addressJoined[userL1]);
+                        }
+                        incentiveHold[_programCode][addressJoined[userL1]] += programs[_programCode].incentiveL2;
+
+                        // token.transfer(userL1, programs[_programCode].incentiveL2);
                     }
                 }
 
@@ -117,17 +127,18 @@ contract ReferralContract is Initializable, UUPSUpgradeable, OwnableUpgradeable 
             }
         }
         // add user to program
-        uidJoined[programCode][uid] = msg.sender;
-        userJoined[uid] = msg.sender;
-        addressJoined[msg.sender] = uid;
+        uidJoined[_programCode][_uid] = msg.sender;
+        userJoined[_uid] = msg.sender;
+        addressJoined[msg.sender] = _uid;
     }
 
     // Add new program
-    function addProgram(string memory programCode, address tokenAddress) onlyOwner public {
-        require(programs[programCode].tokenAddress == address(0) , "Program is existing");
-        programs[programCode] = Program({
-            code: programCode,
-            tokenAddress: tokenAddress,
+    function addProgram(string memory _programCode, address _tokenAddress) public {
+        require(admins[msg.sender] == true, "Caller is not a approval user");
+        require(programs[_programCode].tokenAddress == address(0) , "Program is existing");
+        programs[_programCode] = Program({
+            code: _programCode,
+            tokenAddress: _tokenAddress,
             paused: false,
             incentiveL0: 2 * 10 ** 18 / 100,  // Default 0.02 token
             incentiveL1: 1 * 10 ** 18 / 100,  // Default 0.01 token
@@ -136,58 +147,100 @@ contract ReferralContract is Initializable, UUPSUpgradeable, OwnableUpgradeable 
 
     }
     // Remove program
-    function removeCampaign(string memory programCode) onlyOwner public {
+    /* function removeCampaign(string memory programCode) onlyOwner public {
         require(programs[programCode].tokenAddress != address(0) , "Program not found");
         delete programs[programCode];
+    } */
+
+    function setPause(string memory _programCode, bool _pause) public {
+        require(admins[msg.sender] == true, "Caller is not a approval user");
+        programs[_programCode].paused = _pause;
     }
 
-    // Allow owner transfer back Token
-    function transferBack(address tokenAddress, uint amount) onlyOwner public {
-        token = IERC20Upgradeable(tokenAddress);
-        require(token.balanceOf(address(this)) > amount , "Amount exceeds");
-        token.transfer(msg.sender, amount);
-    }
-
-    function setPause(string memory programCode) onlyOwner public {
-        require(programs[programCode].paused == false , "Program is running");
-        programs[programCode].paused = true;
-    }
-    function setUnPause(string memory programCode) onlyOwner public {
-        require(programs[programCode].paused == true , "Program is pausing");
-        programs[programCode].paused = false;
-    }
-    function setIncentiveAmountL0(string memory programCode, uint amount) onlyOwner public {
-        programs[programCode].incentiveL0 = amount;
-    }
-    function setIncentiveAmountL1(string memory programCode,uint amount) onlyOwner public {
-        programs[programCode].incentiveL1 = amount;
-    }
-    function setIncentiveAmountL2(string memory programCode,uint amount) onlyOwner public {
-        programs[programCode].incentiveL2 = amount;
+    function setIncentiveAmount(string memory _programCode, uint256 _amount1, uint256 _amount2, uint256 _amount3) public {
+        require(admins[msg.sender] == true, "Caller is not a approval user");
+        programs[_programCode].incentiveL0 = _amount1;
+        programs[_programCode].incentiveL1 = _amount2;
+        programs[_programCode].incentiveL2 = _amount3;
     }
 
     function version() virtual pure public returns (string memory) {
         return "v1";
     }
 
-    function checkJoined(string memory programCode, address userAddress) public view returns (bool) {
-        return rUserFromUser[programCode][userAddress] != address(0);
-    }
-    function getInfoProgram(string memory programCode) public view returns (string memory code, address tokenAddress, uint incentiveL0, uint incentiveL1, uint incentiveL2, bool paused) {
+    /* function checkJoined(string memory programCode, address userAddress) public view returns (bool) {
+        return rUserFromReferer[programCode][userAddress] != address(0);
+    } */
+    /* function getInfoProgram(string memory programCode) public view returns (string memory code, address tokenAddress, uint256 incentiveL0, uint256 incentiveL1, uint256 incentiveL2, bool paused) {
         Program memory p = programs[programCode];
         return (p.code, p.tokenAddress, p.incentiveL0, p.incentiveL1, p.incentiveL2, p.paused);
-    }
-    function leaveProgram(string memory programCode) public {
+    } */
+    /* function leaveProgram(string memory programCode) public {
         string memory uid = addressJoined[msg.sender];
         require(uidJoined[programCode][uid] != address(0) , "Account not found");
         uidJoined[programCode][uid] = address(0);
+    } */
+    function removeJoinProgram(string memory _programCode, string memory _uid) public {
+        require(admins[msg.sender] == true, "Caller is not a approval user");
+        require(uidJoined[_programCode][_uid] != address(0) , "Account not found");
+        uidJoined[_programCode][_uid] = address(0);
     }
-    function removeJoinProgram(string memory programCode, string memory uid) public onlyOwner {
-        require(uidJoined[programCode][uid] != address(0) , "Account not found");
-        uidJoined[programCode][uid] = address(0);
-    }
-    function emergencyWithdrawToken(address tokenAddress, uint256 _amount) external onlyOwner {
-        token = IERC20Upgradeable(tokenAddress);
+
+    function emergencyWithdrawToken(address _tokenAddress, uint256 _amount) public onlyOwner {
+        token = IERC20Upgradeable(_tokenAddress);
+
+        require(token.balanceOf(address(this)) >= _amount , "Amount exceeds");
         token.safeTransfer(owner(), _amount);
     }
+
+    function setAdmin(address _adminAddress, bool _allow) public onlyOwner {
+        admins[_adminAddress] = _allow;
+    }
+
+    // Approve pay all incentive in store
+    function approveAllIncentive(string memory _programCode) public  {
+        // Check that the calling account has the approval role
+        require(admins[msg.sender] == true, "Caller is not a approval user");
+        require(programs[_programCode].tokenAddress != address(0) , "Program not found");
+
+        address tokenAddress = programs[_programCode].tokenAddress;
+        token = IERC20Upgradeable(tokenAddress);
+
+        // Pay all incentive
+        for (uint i=0; i<holdReferrer[_programCode].length; i++) {
+            address referrerAddress = userJoined[holdReferrer[_programCode][i]];
+            uint256 amount = incentiveHold[_programCode][holdReferrer[_programCode][i]];
+            if (amount >0) {
+                // Transfer token
+                token.transfer(referrerAddress, amount);
+            }
+        }
+        // Clear Holder
+        for (uint i=0; i<holdReferrer[_programCode].length; i++) {
+            deniedIncentive(_programCode,i);
+        }
+    }
+    // Remove incentive from holder
+    function deniedIncentive(string memory _programCode, uint256 _index) public  {
+        // Check that the calling account has the approval role
+        require(admins[msg.sender] == true, "Caller is not a approval user");
+
+        require(programs[_programCode].tokenAddress != address(0) , "Program not found");
+
+        // Remove incentive
+        incentiveHold[_programCode][holdReferrer[_programCode][_index]] = 0;
+        // remove holder incentive
+        removeIncentiveHold(_programCode, _index);
+
+    }
+
+    function removeIncentiveHold(string memory _programCode, uint _index) private {
+        require(programs[_programCode].tokenAddress != address(0) , "Program not found");
+
+        // Move the last element into the place to delete
+        holdReferrer[_programCode][_index] = holdReferrer[_programCode][holdReferrer[_programCode].length - 1];
+        // Remove the last element
+        holdReferrer[_programCode].pop();
+    }
+
 }

@@ -13,8 +13,6 @@ describe("Referral contract", function () {
 
   beforeEach(async function () {
 
-
-
     // Get the ContractFactory and Signers here.
     RIRToken = await ethers.getContractFactory("RIRToken");
     MEOToken = await ethers.getContractFactory("MEOToken");
@@ -32,6 +30,8 @@ describe("Referral contract", function () {
     await rirToken.transfer(contract.address, ethers.utils.parseUnits( "100" , 18 ));
     await meoToken.transfer(contract.address, ethers.utils.parseUnits( "100" , 18 ));
 
+    // Set addr4 is Admin
+    await contract.setAdmin(addr4.address, true);
   });
 
   /*
@@ -58,40 +58,41 @@ describe("Referral contract", function () {
   }); */
 
   it('Should add new program', async function () {
-
-    const code = "RIRProgram";
+    const programCode =  "RIRProgram";
+    const code = programCode;
     await contract.addProgram(code, rirToken.address);
-    var program = await contract.programs("RIRProgram");
+    var program = await contract.programs(programCode);
     await expect(program.tokenAddress).to.equal(rirToken.address);
 
     // Get info program
-    var p = await contract.getInfoProgram(code);
+    var p = await contract.programs(code);
     await expect(p.code).to.equal(code);
   });
+
   it('Should change incentives', async function () {
+    const programCode =  "RIRProgram";
+    await contract.addProgram(programCode, rirToken.address);
+    await contract.setIncentiveAmount(programCode, 100,50,30);
 
-    await contract.addProgram("RIRProgram", rirToken.address);
-    await contract.setIncentiveAmountL0("RIRProgram", 100);
-    await contract.setIncentiveAmountL1("RIRProgram", 50);
-    await contract.setIncentiveAmountL2("RIRProgram", 30);
-
-    var program = await contract.programs("RIRProgram");
+    var program = await contract.programs(programCode);
 
     await expect(program.incentiveL0).to.equal(100);
     await expect(program.incentiveL1).to.equal(50);
     await expect(program.incentiveL2).to.equal(30);
   });
   it('Should get information program', async function () {
-    await contract.addProgram("RIRProgram", rirToken.address);
-    var program = await contract.getInfoProgram("RIRProgram");
-    await expect(program.code).to.equal("RIRProgram");
+    const programCode =  "RIRProgram";
+    await contract.addProgram(programCode, rirToken.address);
+    var program = await contract.programs(programCode);
+    await expect(program.code).to.equal(programCode);
   });
 
   it('Should add 2 programs and let one user join both', async function () {
 
-    await contract.addProgram("RIRProgram", rirToken.address);
+    const programCode = "RIRProgram";
+    await contract.addProgram(programCode, rirToken.address);
     await contract.addProgram("MEOProgram", meoToken.address);
-    var program = await contract.programs("RIRProgram");
+    var program = await contract.programs(programCode);
     await expect(program.tokenAddress).to.equal(rirToken.address);
     program = await contract.programs("MEOProgram");
     await expect(program.tokenAddress).to.equal(meoToken.address);
@@ -100,26 +101,30 @@ describe("Referral contract", function () {
     const uid1 = "123123";
     // Set user 2
     const uid2 = "456456";
-    // Set user 3
-    const uid3 = "009900";
-    // Set user 4
-    const uid4 = "789789";
 
     // Valid
-    await expect(contract.connect(addr1).joinProgram("RIRProgram", uid1,"")).to.not.be.reverted;
+    await expect(contract.connect(addr1).joinProgram(programCode, uid1,"")).to.not.be.reverted;
     // Valid
-    await expect(contract.connect(addr2).joinProgram("RIRProgram", uid2, uid1)).to.not.be.reverted;
-    expect(await contract.rUserFromUser("RIRProgram",addr2.address)).to.equal(addr1.address);
+    await expect(contract.connect(addr2).joinProgram(programCode, uid2, uid1)).to.not.be.reverted;
+    expect(await contract.rUserFromReferer(programCode,addr2.address)).to.equal(addr1.address);
 
-    // console.log(await contract.debug());
     // valid
     await expect(contract.connect(addr2).joinProgram("MEOProgram", uid2,"")).to.not.be.reverted;
+
+    // Check hold got incentive
+    expect(await contract.incentiveHold(programCode,uid1)).to.equal(ethers.utils.parseUnits( "0.02" , 18 )); // 0.02 MEO
+
+    // Admin approve All incentive
+    await contract.connect(addr4).approveAllIncentive(programCode);
+
+    // Check hold got incentive is 0
+    expect(await contract.incentiveHold(programCode,uid1)).to.equal(0); // Already clear
 
     // Check balance incentive of user A
     expect(await rirToken.balanceOf(addr1.address)).to.equal(ethers.utils.parseUnits( "0.02" , 18 )); // 0.02 MEO
 
     // should un-valid, because addr1 not joined MEO program
-    await expect(await contract.uidJoined("RIRProgram",uid1)).to.equal(addr1.address);
+    await expect(await contract.uidJoined(programCode,uid1)).to.equal(addr1.address);
     // should valid, because addr1 not joined MEO program
     await expect(await contract.uidJoined("MEOProgram",uid1)).to.equal("0x0000000000000000000000000000000000000000");
 
@@ -160,6 +165,7 @@ describe("Referral contract", function () {
 
   it('Should join program successfully with referral code and got incentive | 1 level', async function () {
 
+    const programCode =  "RIRProgram";
     // Set user 1
     const uid1 = "123123";
     // Set user 2
@@ -170,20 +176,27 @@ describe("Referral contract", function () {
     const uid4 = "789789";
 
     // Add program
-    await contract.addProgram("RIRProgram", rirToken.address);
+    await contract.addProgram(programCode, rirToken.address);
 
     // User A join program and got referral code
-    await contract.connect(addr1).joinProgram("RIRProgram", uid1, "");
+    await contract.connect(addr1).joinProgram(programCode, uid1, "");
 
     // User B join program with referral code of user A
-    await contract.connect(addr2).joinProgram("RIRProgram", uid2, uid1);
+    await contract.connect(addr2).joinProgram(programCode, uid2, uid1);
+
     // User C join program with referral code of user A
-    await contract.connect(addr3).joinProgram("RIRProgram", uid3, uid1);
+    await contract.connect(addr3).joinProgram(programCode, uid3, uid1);
+
+    // const amountHold = await contract.incentiveHold(programCode,uid1);
+    // console.log(ethers.utils.formatUnits(amountHold,0))
 
     // Refer successfully
-    expect(await contract.uidJoined("RIRProgram",uid1)).to.equal(addr1.address);
-    expect(await contract.uidJoined("RIRProgram",uid2)).to.equal(addr2.address);
-    expect(await contract.uidJoined("RIRProgram",uid3)).to.equal(addr3.address);
+    expect(await contract.uidJoined(programCode,uid1)).to.equal(addr1.address);
+    expect(await contract.uidJoined(programCode,uid2)).to.equal(addr2.address);
+    expect(await contract.uidJoined(programCode,uid3)).to.equal(addr3.address);
+
+    // Admin approve All incentive
+    await contract.connect(addr4).approveAllIncentive(programCode);
 
     // Check balance incentive of user A
     expect(await rirToken.balanceOf(addr1.address)).to.equal(ethers.utils.parseUnits( "0.04" , 18 )); // 0.04 RIR
@@ -191,7 +204,7 @@ describe("Referral contract", function () {
   });
 
   it('Should join program successfully with referral code and got incentive | 2 level', async function () {
-
+    const programCode =  "RIRProgram";
     // Set user 1
     const uid1 = "123123";
     // Set user 2
@@ -202,19 +215,28 @@ describe("Referral contract", function () {
     const uid4 = "789789";
 
     // Add program
-    await contract.addProgram("RIRProgram", rirToken.address);
+    await contract.addProgram(programCode, rirToken.address);
 
     // User A join program and give referral code
-    await contract.connect(addr1).joinProgram("RIRProgram", uid1, "");
+    await contract.connect(addr1).joinProgram(programCode, uid1, "");
 
     // User B join program with referral code of user A
-    await contract.connect(addr2).joinProgram("RIRProgram", uid2, uid1);
+    await contract.connect(addr2).joinProgram(programCode, uid2, uid1);
 
     // User C join program with referral code of user B
-    await contract.connect(addr3).joinProgram("RIRProgram", uid3, uid2);
+    await contract.connect(addr3).joinProgram(programCode, uid3, uid2);
 
     // Refer successfully
-    expect(await contract.rUserFromUser("RIRProgram",addr2.address)).to.equal(addr1.address);
+    expect(await contract.rUserFromReferer(programCode,addr2.address)).to.equal(addr1.address);
+
+    // console.log(await contract.holdReferrer(programCode,0));
+    // console.log(await contract.holdReferrer(programCode,1));
+
+    // const amountHold = await contract.incentiveHold(programCode,uid2);
+    // console.log(ethers.utils.formatUnits(amountHold,0))
+
+    // Admin approve All incentive
+    await contract.connect(addr4).approveAllIncentive(programCode);
 
     // Check balance incentive of user A
     expect(await rirToken.balanceOf(addr1.address)).to.equal(ethers.utils.parseUnits( "0.03" , 18 )); // 0.03 RIR
@@ -224,7 +246,7 @@ describe("Referral contract", function () {
   });
 
   it('Should join program successfully with referral code and got incentive | 3 level', async function () {
-
+    const programCode =  "RIRProgram";
 
     // Set user 1
     const uid1 = "123123";
@@ -238,31 +260,34 @@ describe("Referral contract", function () {
     const uid5 = "777777";
 
     // Add program
-    await contract.addProgram("RIRProgram", rirToken.address);
+    await contract.addProgram(programCode, rirToken.address);
 
     // User A join program and give referral code
-    await contract.connect(addr1).joinProgram("RIRProgram", uid1, "");
+    await contract.connect(addr1).joinProgram(programCode, uid1, "");
 
     // User B join program with referral code of user A
-    await contract.connect(addr2).joinProgram("RIRProgram", uid2, uid1);
+    await contract.connect(addr2).joinProgram(programCode, uid2, uid1);
     // User A got 0.02
     // User B got 0
 
     // User C join program with referral code of user B
-    await contract.connect(addr3).joinProgram("RIRProgram", uid3, uid2);
+    await contract.connect(addr3).joinProgram(programCode, uid3, uid2);
     // User A got 0.01 => 0.03
     // User B got 0.02
 
     // User D join program with referral code of user C
-    await contract.connect(addr4).joinProgram("RIRProgram", uid4, uid3);
+    await contract.connect(addr4).joinProgram(programCode, uid4, uid3);
     // User E join program with referral code of user C
-    await contract.connect(addr5).joinProgram("RIRProgram", uid5, uid3);
+    await contract.connect(addr5).joinProgram(programCode, uid5, uid3);
     // User A got 0.002 => 0.032
     // User B got 0.02 => 0.04
 
     // Refer successfully
-    expect(await contract.rUserFromUser("RIRProgram",addr2.address)).to.equal(addr1.address);
-    expect(await contract.rUserFromUser("RIRProgram",addr3.address)).to.equal(addr2.address);
+    expect(await contract.rUserFromReferer(programCode,addr2.address)).to.equal(addr1.address);
+    expect(await contract.rUserFromReferer(programCode,addr3.address)).to.equal(addr2.address);
+
+    // Admin approve All incentive
+    await contract.connect(addr4).approveAllIncentive(programCode);
 
     // Check balance incentive of user A
     expect(await rirToken.balanceOf(addr1.address)).to.equal(ethers.utils.parseUnits( "0.032" , 18 )); // 0.032 RIR
@@ -271,46 +296,36 @@ describe("Referral contract", function () {
 
   });
 
-  it('Should transfer back token from Referral Contract', async function () {
-
-    await contract.transferBack(rirToken.address, ethers.utils.parseUnits( "50" , 18 ));
-
-    const contractBalance = await rirToken.balanceOf(contract.address);
-    expect(contractBalance).to.equal(ethers.utils.parseUnits( "50" , 18 ));
-  });
   it('Should don\'t add incentive back to user leave and join again', async function () {
-
+    const programCode =  "RIRProgram";
     // Set user 1
     const uid1 = "123123";
     // Set user 2
     const uid2 = "456456";
-    // Set user 3
-    const uid3 = "009900";
-    // Set user 4
-    const uid4 = "789789";
-    // Set user 5
-    const uid5 = "777777";
 
     // Add program
-    await contract.addProgram("RIRProgram", rirToken.address);
+    await contract.addProgram(programCode, rirToken.address);
 
     // User A join program and got referral code
-    await contract.connect(addr1).joinProgram("RIRProgram", uid1, "");
+    await contract.connect(addr1).joinProgram(programCode, uid1, "");
 
     // User B join program with referral code of user A
-    await contract.connect(addr2).joinProgram("RIRProgram", uid2, uid1);
+    await contract.connect(addr2).joinProgram(programCode, uid2, uid1);
 
     // User B leaves program
-    await contract.connect(addr2).leaveProgram("RIRProgram");
+    await contract.connect(owner).removeJoinProgram(programCode,uid2);
     // User B join again
-    await contract.connect(addr2).joinProgram("RIRProgram", uid2, uid1);
+    await contract.connect(addr2).joinProgram(programCode, uid2, uid1);
+
+    // Admin approve All incentive
+    await contract.connect(addr4).approveAllIncentive(programCode);
 
     expect(await rirToken.balanceOf(addr1.address)).to.equal(ethers.utils.parseUnits( "0.02" , 18 )); // 0.02 RIR
 
   });
 
   it('Trying cheating.....', async function () {
-
+    const programCode =  "RIRProgram";
     // Set user 1
     const uid1 = "123123";
     // Set user 2
@@ -321,31 +336,31 @@ describe("Referral contract", function () {
     const uid4 = "789789";
 
     // Add program
-    await contract.addProgram("RIRProgram", rirToken.address);
+    await contract.addProgram(programCode, rirToken.address);
 
     // User A join program and got referral code
-    await contract.connect(addr1).joinProgram("RIRProgram", uid1, "");
+    await contract.connect(addr1).joinProgram(programCode, uid1, "");
 
     // User A want cheating, join itself again
-    await expect(contract.connect(addr1).joinProgram("RIRProgram", uid1, uid1)).to.be.reverted;
+    await expect(contract.connect(addr1).joinProgram(programCode, uid1, uid1)).to.be.reverted;
     // User B join
-    await expect(contract.connect(addr2).joinProgram("RIRProgram", uid2, uid1)).to.not.be.reverted;
+    await expect(contract.connect(addr2).joinProgram(programCode, uid2, uid1)).to.not.be.reverted;
     // User B want cheating, create difference uid
-    await expect(contract.connect(addr2).joinProgram("RIRProgram", uid3, uid1)).to.be.reverted;
+    await expect(contract.connect(addr2).joinProgram(programCode, uid3, uid1)).to.be.reverted;
   });
 
   it('Should withdraw an amount token in emergency', async function () {
     var contractBalance = await rirToken.balanceOf(contract.address);
     expect(contractBalance).to.equal(ethers.utils.parseUnits( "100" , 18 ));
 
-    const tokenWithdraw = ethers.utils.parseUnits( "50" , 18 );
+    const tokenWithdraw = ethers.utils.parseUnits( "30" , 18 );
 
     await expect(contract.connect(addr2).emergencyWithdrawToken(tokenWithdraw)).to.be.reverted;
 
     await contract.connect(owner).emergencyWithdrawToken(rirToken.address, tokenWithdraw);
 
     contractBalance = await rirToken.balanceOf(contract.address);
-    expect(contractBalance).to.equal(tokenWithdraw);
+    expect(contractBalance).to.equal(ethers.utils.parseUnits( "70" , 18 ));
 
   });
 });

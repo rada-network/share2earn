@@ -21,13 +21,13 @@ async function main() {
   await meoToken.transfer(referralAddress, ethers.utils.parseUnits( "100" , 18 ));
   console.log("Top-up 100 MEO");
 
-  const referralContract = await ethers.getContractAt("ReferralContract",referralAddress);
+  /* const referralContract = await ethers.getContractAt("ReferralContract",referralAddress);
   await referralContract.addProgram("RIRProgram",rirAddresses[network]);
   console.log("RIRProgram added");
   await referralContract.addProgram("MEOProgram",meoAddresses[network]);
   console.log("MEOProgram added");
   await referralContract.addProgram("RIRProgramII",rirAddresses[network]);
-  console.log("RIRProgramII added");
+  console.log("RIRProgramII added"); */
 
 }
 

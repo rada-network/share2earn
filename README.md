@@ -55,7 +55,7 @@ Build & Deploy BSC testnet | Referral Contract
 npx hardhat run scripts/ReferralContract/deploy.js --network testnet
 // Copy Proxy address to proxyAddresses.js
 // Top-up tokens
-npx hardhat run scripts/ReferralContract/topUpJoinReferral.js --network testnet
+npx hardhat run scripts/ReferralContract/topUpContract.js --network testnet
 
 // Change incentive by program code
 npx hardhat run scripts/ReferralContract/changeIncentive.js --network testnet
