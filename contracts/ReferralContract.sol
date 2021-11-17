@@ -32,6 +32,9 @@ contract ReferralContract is Initializable, UUPSUpgradeable, OwnableUpgradeable 
     mapping(string => mapping(address => address[])) public userReferees; // program code => referrer address  => user address[]
     mapping(string => address) public userJoined; // uid => user address
     mapping(address => string) public addressJoined; // user address => uid
+    mapping(string => string[]) public refereesProgram; // programCode => uid joined
+    mapping(string => uint256) public incentiveProgram; // programCode => incentive paid
+
 
     mapping(string => string[]) public holdReferrer; // programCode => uid referrer have incentive hold
     mapping(string => mapping(string => uint256)) public incentiveHold; // programCode => referrer uid => incentive hold
@@ -129,6 +132,7 @@ contract ReferralContract is Initializable, UUPSUpgradeable, OwnableUpgradeable 
         uidJoined[_programCode][_uid] = msg.sender;
         userJoined[_uid] = msg.sender;
         addressJoined[msg.sender] = _uid;
+        refereesProgram[_programCode].push(_uid); // List User joined
     }
 
     // Add new program
@@ -213,6 +217,7 @@ contract ReferralContract is Initializable, UUPSUpgradeable, OwnableUpgradeable 
             if (amount >0) {
                 // Transfer token
                 token.transfer(referrerAddress, amount);
+                incentiveProgram[_programCode] += amount;
                 denyIncentive(_programCode,uid);
             }
         }
@@ -231,8 +236,18 @@ contract ReferralContract is Initializable, UUPSUpgradeable, OwnableUpgradeable 
         incentiveHold[_programCode][_uid] = 0;
     }
 
-    function getIncentiveHoldersCount(string memory _programCode) public view returns(uint holdersCount) {
+    function getIncentiveHoldersCount(string memory _programCode) public view returns(uint) {
         return holdReferrer[_programCode].length;
+    }
+
+    function getIncentiveHolders(string memory _programCode) public view returns(string[] memory) {
+        return holdReferrer[_programCode];
+    }
+    function getJoiner(string memory _programCode) public view returns(string[] memory) {
+        return refereesProgram[_programCode];
+    }
+    function getTotalJoiner(string memory _programCode) public view returns(uint) {
+        return refereesProgram[_programCode].length;
     }
 
     /* function removeIncentiveHold(string memory _programCode, uint _index) private {
