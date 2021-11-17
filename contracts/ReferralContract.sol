@@ -207,30 +207,32 @@ contract ReferralContract is Initializable, UUPSUpgradeable, OwnableUpgradeable 
 
         // Pay all incentive
         for (uint i=0; i<holdReferrer[_programCode].length; i++) {
-            address referrerAddress = userJoined[holdReferrer[_programCode][i]];
-            uint256 amount = incentiveHold[_programCode][holdReferrer[_programCode][i]];
+            string memory uid = holdReferrer[_programCode][i];
+            address referrerAddress = userJoined[uid];
+            uint256 amount = incentiveHold[_programCode][uid];
             if (amount >0) {
                 // Transfer token
                 token.transfer(referrerAddress, amount);
+                denyIncentive(_programCode,uid);
             }
         }
         // Clear Holder
-        for (uint i=0; i<holdReferrer[_programCode].length; i++) {
+        /* for (uint i=0; i<holdReferrer[_programCode].length; i++) {
             denyIncentive(_programCode,i);
-        }
+        } */
     }
     // Remove incentive from holder
-    function denyIncentive(string memory _programCode, uint256 _index) public {
+    function denyIncentive(string memory _programCode, string memory _uid) public {
         // Check that the calling account has the approval role
         require(admins[msg.sender] == true, "Caller is not a approval user");
         require(programs[_programCode].tokenAddress != address(0) , "Program not found");
-        require(holdReferrer[_programCode].length > _index, "Not found");
 
         // Remove incentive
-        incentiveHold[_programCode][holdReferrer[_programCode][_index]] = 0;
-        // remove holder incentive
-        // removeIncentiveHold(_programCode, _index);
+        incentiveHold[_programCode][_uid] = 0;
+    }
 
+    function getIncentiveHoldersCount(string memory _programCode) public view returns(uint holdersCount) {
+        return holdReferrer[_programCode].length;
     }
 
     /* function removeIncentiveHold(string memory _programCode, uint _index) private {

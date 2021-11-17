@@ -7,14 +7,18 @@ async function main() {
   const network = hardhatArguments.network;
   const referralAddress = referralAddresses[network];
 
-  console.log("Change incentive with the account:", deployer.address);
-  console.log("With ReferralContract address:", referralAddress);
+  console.log("Set Admin with the account: ", deployer.address);
+  console.log("With ReferralContract address: ", referralAddress);
 
   const program = "PGX";
+  console.log("Program: ", program);
+  // const address = "0x329A3600DDAa362C9239d51A2bA171e1BAbe5369"; // Firefox
+  const address = "0xB2c8321fc63809DE7CfcBdaaCeF8aa798420D425"; // Brave
+  
 
   const referralContract = await ethers.getContractAt("ReferralContract",referralAddress);
-  await referralContract.setIncentiveAmount(program,ethers.utils.parseUnits( "0.03" , 18 ),ethers.utils.parseUnits( "0.015" , 18 ),ethers.utils.parseUnits( "0.002" , 18 ));
-  console.log("Change Incentive", program);
+  await referralContract.setAdmin(address,true);
+  console.log("Finished set Admin for: ", address);
 }
 
 main()

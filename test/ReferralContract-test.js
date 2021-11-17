@@ -402,4 +402,37 @@ describe("Referral contract", function () {
     expect(contractBalance).to.equal(ethers.utils.parseUnits( "70" , 18 ));
 
   });
+
+
+
+  it('Should get count incentive holders', async function () {
+    const programCode =  "RIRProgram";
+    // Set user 1
+    const uid1 = "123123";
+    // Set user 2
+    const uid2 = "456456";
+    // Set user 3
+    const uid3 = "009900";
+    // Set user 4
+    const uid4 = "789789";
+
+    // Add program
+    await contract.addProgram(programCode, rirToken.address);
+
+    var totalHolders = await contract.connect(addr4).getIncentiveHoldersCount(programCode);
+    await expect(totalHolders).to.equal(0);
+
+
+    // User A join program and give referral code
+    await contract.connect(addr1).joinProgram(programCode, uid1, "");
+
+    // User B join program with referral code of user A
+    await contract.connect(addr2).joinProgram(programCode, uid2, uid1);
+
+    // User C join program with referral code of user B
+    await contract.connect(addr3).joinProgram(programCode, uid3, uid2);
+
+    totalHolders = await contract.connect(addr4).getIncentiveHoldersCount(programCode);
+    await expect(totalHolders).to.equal(2);
+  });
 });
