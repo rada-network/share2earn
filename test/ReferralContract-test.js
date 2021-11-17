@@ -324,6 +324,45 @@ describe("Referral contract", function () {
 
   });
 
+  it('Should deny incentive', async function () {
+    const programCode =  "RIRProgram";
+    // Set user 1
+    const uid1 = "123123";
+    // Set user 2
+    const uid2 = "456456";
+    // Set user 3
+    const uid3 = "009900";
+    // Set user 4
+    const uid4 = "789789";
+
+    // Add program
+    await contract.addProgram(programCode, rirToken.address);
+
+    // User A join program and give referral code
+    await contract.connect(addr1).joinProgram(programCode, uid1, "");
+
+    // User B join program with referral code of user A
+    await contract.connect(addr2).joinProgram(programCode, uid2, uid1);
+
+    // User C join program with referral code of user B
+    await contract.connect(addr3).joinProgram(programCode, uid3, uid2);
+
+    // Other try to deny 1 incentive
+    await expect(contract.connect(addr1).denyIncentive(programCode, 1)).to.be.reverted;
+
+    // Admin deny 1 incentive
+    await contract.connect(addr4).denyIncentive(programCode, 1);
+
+    var uid = await contract.connect(addr4).holdReferrer(programCode, 1)
+    await expect(await contract.incentiveHold(programCode, uid)).to.equal(0);
+
+    uid = await contract.connect(addr4).holdReferrer(programCode, 0)
+    await expect(await contract.incentiveHold(programCode, uid)).to.equal(ethers.utils.parseUnits( "0.03" , 18 ));
+  });
+
+
+
+
   it('Trying cheating.....', async function () {
     const programCode =  "RIRProgram";
     // Set user 1

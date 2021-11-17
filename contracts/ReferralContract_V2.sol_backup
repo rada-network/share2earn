@@ -1,0 +1,27 @@
+// SPDX-License-Identifier: MIT
+// pragma solidity >=0.8.0 <=0.8.4;
+pragma solidity 0.8.2;
+
+import "./ReferralContract.sol";
+
+
+// NOTICE: Preparing upgrade in future......
+
+contract ReferralContractV2 is ReferralContract {
+
+    // SAMPLE VARIABLE
+    mapping(string => mapping(string => uint256)) public TEST_TEST_TEST;
+
+    // SAMPLE FUNCTION
+    function denyIncentive(string memory _programCode, uint256 _index) public override {
+        // Check that the calling account has the approval role
+        require(admins[msg.sender] == true, "Caller is not a approval user");
+        require(programs[_programCode].tokenAddress != address(0) , "Program not found");
+        require(holdReferrer[_programCode].length > _index, "Not found");
+        // Remove incentive
+        incentiveHold[_programCode][holdReferrer[_programCode][_index]] = 0;
+
+    }
+
+
+}

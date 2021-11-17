@@ -1,7 +1,7 @@
 const { ethers, upgrades, hardhatArguments } = require('hardhat');
 const { addresses } = require('./proxyAddresses');
 
-const contractName = "ReferralContractV2";
+const contractName = "ReferralContract_V2";
 
 async function main() {
   const [deployer] = await ethers.getSigners();

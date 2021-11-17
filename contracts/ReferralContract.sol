@@ -33,7 +33,7 @@ contract ReferralContract is Initializable, UUPSUpgradeable, OwnableUpgradeable 
     mapping(string => address) public userJoined; // uid => user address
     mapping(address => string) public addressJoined; // user address => uid
 
-    mapping(string => string[]) public holdReferrer; // programCode => referrer have incentive hold
+    mapping(string => string[]) public holdReferrer; // programCode => uid referrer have incentive hold
     mapping(string => mapping(string => uint256)) public incentiveHold; // programCode => referrer uid => incentive hold
 
     IERC20Upgradeable public token;
@@ -59,7 +59,6 @@ contract ReferralContract is Initializable, UUPSUpgradeable, OwnableUpgradeable 
         bytes memory haveReferralCode = bytes(_referrerCode);
         if (haveReferralCode.length > 0) {
             require(keccak256(bytes(_uid)) != keccak256(bytes(_referrerCode)), "Cannot join yourself");
-
             require(userJoined[_referrerCode] != address(0), "Wrong referrer code");
         }
 
@@ -217,30 +216,38 @@ contract ReferralContract is Initializable, UUPSUpgradeable, OwnableUpgradeable 
         }
         // Clear Holder
         for (uint i=0; i<holdReferrer[_programCode].length; i++) {
-            deniedIncentive(_programCode,i);
+            denyIncentive(_programCode,i);
         }
     }
     // Remove incentive from holder
-    function deniedIncentive(string memory _programCode, uint256 _index) public  {
+    function denyIncentive(string memory _programCode, uint256 _index) public {
         // Check that the calling account has the approval role
         require(admins[msg.sender] == true, "Caller is not a approval user");
-
         require(programs[_programCode].tokenAddress != address(0) , "Program not found");
+        require(holdReferrer[_programCode].length > _index, "Not found");
 
         // Remove incentive
         incentiveHold[_programCode][holdReferrer[_programCode][_index]] = 0;
         // remove holder incentive
-        removeIncentiveHold(_programCode, _index);
+        // removeIncentiveHold(_programCode, _index);
 
     }
 
-    function removeIncentiveHold(string memory _programCode, uint _index) private {
-        require(programs[_programCode].tokenAddress != address(0) , "Program not found");
+    /* function removeIncentiveHold(string memory _programCode, uint _index) private {
+        for (uint i = _index; i < holdReferrer[_programCode].length-1; i++) {
+            holdReferrer[_programCode][i] = holdReferrer[_programCode][i+1];
+        }
+        delete holdReferrer[_programCode][holdReferrer[_programCode].length-1];
+        holdReferrer[_programCode].length--;
+    } */
+    /* function removeIncentiveHold(string memory _programCode, uint _index) private {
 
         // Move the last element into the place to delete
-        holdReferrer[_programCode][_index] = holdReferrer[_programCode][holdReferrer[_programCode].length - 1];
+        if (holdReferrer[_programCode].length>1) {
+            holdReferrer[_programCode][_index] = holdReferrer[_programCode][holdReferrer[_programCode].length - 1];
+        }
         // Remove the last element
         holdReferrer[_programCode].pop();
-    }
+    } */
 
 }
