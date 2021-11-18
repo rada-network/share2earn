@@ -7,6 +7,7 @@ PRIVATE_KEY=
 RINKEBY_API_KEY=
 ETHERSCAN_API_KEY=
 BSC_API_KEY=
+MNEMONIC=
 ```
 
 The following tasks:
