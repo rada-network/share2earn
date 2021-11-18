@@ -2,6 +2,7 @@ require("@nomiclabs/hardhat-waffle");
 require("@nomiclabs/hardhat-etherscan");
 require('@nomiclabs/hardhat-ethers');
 require('@openzeppelin/hardhat-upgrades');
+require("hardhat-gas-reporter");
 require('dotenv').config()
 
 // a new App in its dashboard, and replace "KEY" with its key
@@ -49,8 +50,8 @@ module.exports = {
     testnet: {
       url: "https://data-seed-prebsc-1-s1.binance.org:8545",
       chainId: 97,
-      gas: 2100000,
-      gasPrice: 20000000000,
+      /* gas: 2100000,
+      gasPrice: 20000000000, */
       // accounts: [`0x${PRIVATE_KEY}`],
       accounts: {
         mnemonic: MNEMONIC,
@@ -60,4 +61,11 @@ module.exports = {
       }
     },
   },
+  gasReporter: {
+    enabled: false,
+    excludeContracts: ['RIRToken','MEOToken'],
+    currency: 'USDT',
+    gasPrice: 21,
+    coinmarketcap: "8a859b7f-a9d8-40fe-8d22-5f1c8525ed69"
+  }
 };

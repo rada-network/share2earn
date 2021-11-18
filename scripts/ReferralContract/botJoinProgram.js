@@ -17,7 +17,7 @@ async function main() {
   console.log(uid)
   await referralContract.connect(addrs[startFrom]).joinProgram(codeProgram, uid, "");
 
-  /* for (let i=startFrom;i<(startFrom+3);i++) {
+  /*for (let i=(startFrom+1);i<(startFrom+3);i++) {
     const addr = addrs[i];
     const uidJoiner = crypto.createHash('md5').update(addr.address).digest('hex').substring(0,12);
 
