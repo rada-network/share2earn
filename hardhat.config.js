@@ -14,6 +14,8 @@ const BSC_API_KEY = process.env.BSC_API_KEY;
 // go to Account Details > Export Private Key
 // Be aware of NEVER putting real Ether into testing accounts
 const PRIVATE_KEY = process.env.PRIVATE_KEY;
+const MNEMONIC = process.env.MNEMONIC;
+
 
 // This is a sample Hardhat task. To learn how to create your own go to
 // https://hardhat.org/guides/create-task.html
@@ -47,8 +49,15 @@ module.exports = {
     testnet: {
       url: "https://data-seed-prebsc-1-s1.binance.org:8545",
       chainId: 97,
+      gas: 2100000,
       gasPrice: 20000000000,
-      accounts: [`0x${PRIVATE_KEY}`],
+      // accounts: [`0x${PRIVATE_KEY}`],
+      accounts: {
+        mnemonic: MNEMONIC,
+        path: "m/44'/60'/0'/0",
+        initialIndex: 0,
+        count: 20
+      }
     },
   },
 };

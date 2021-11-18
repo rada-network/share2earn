@@ -60,13 +60,16 @@ npx hardhat run scripts/ReferralContract/topUpContract.js --network testnet
 // Add program, change program code in source
 npx hardhat run scripts/ReferralContract/addProgram.js --network testnet
 
-// Change incentive by program code
-npx hardhat run scripts/ReferralContract/changeIncentive.js --network testnet
+// Change info program
+npx hardhat run scripts/ReferralContract/updateProgram.js --network testnet
 
 
 // Set Admin
 npx hardhat run scripts/ReferralContract/setAdmin.js --network testnet
 
+// Bot
+npx hardhat run scripts/ReferralContract/botTopup.js --network testnet
+npx hardhat run scripts/ReferralContract/botJoinProgram.js --network testnet
 
 // npx hardhat run scripts/ReferralContract/upgradeContract_v2.js --network testnet
 // npx hardhat run scripts/ReferralContract/upgradeContract_v3.js --network testnet

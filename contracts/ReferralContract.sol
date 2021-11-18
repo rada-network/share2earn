@@ -1,9 +1,6 @@
 // SPDX-License-Identifier: MIT
-// pragma solidity >=0.8.0 <=0.8.4;
 pragma solidity 0.8.2;
 
-// import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-// import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts-upgradeable/token/ERC20/IERC20Upgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/token/ERC20/utils/SafeERC20Upgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
@@ -20,24 +17,31 @@ contract ReferralContract is Initializable, UUPSUpgradeable, OwnableUpgradeable 
         uint256 incentiveL1;
         uint256 incentiveL2;
         bool paused;
+        uint256 tokenAllocation;
+        uint256 tokenIncentive;
+        uint256 incentiveHold;
+        uint256 startTime;
+        uint256 endTime;
     }
 
     mapping(address => bool) public admins;
 
     mapping(string => Program) public programs;
 
-    // Config users
+    // Program
     mapping(string => mapping(string => address)) public uidJoined; // program code => uid => sender address
     mapping(string => mapping(address => address)) public rUserFromReferer; // program code => sender address => referrer address
-    mapping(string => mapping(address => address[])) public userReferees; // program code => referrer address  => user address[]
+    mapping(string => mapping(string => string[])) public userReferees; // program code => uid => uid joiner[]
+    mapping(string => string[]) public refereesProgram; // programCode => uid joined
+    mapping(string => mapping(string => uint256)) public incentivePaid; // program code => referrer uid => incentive paid
+
+    // Check
     mapping(string => address) public userJoined; // uid => user address
     mapping(address => string) public addressJoined; // user address => uid
-    mapping(string => string[]) public refereesProgram; // programCode => uid joined
-    mapping(string => uint256) public incentiveProgram; // programCode => incentive paid
 
-
-    mapping(string => string[]) public holdReferrer; // programCode => uid referrer have incentive hold
-    mapping(string => mapping(string => uint256)) public incentiveHold; // programCode => referrer uid => incentive hold
+    // Approve
+    mapping(string => string[]) public holdReferrer; // program code => uid referrer have incentive hold
+    mapping(string => mapping(string => uint256)) public incentiveHold; // program code => referrer uid => incentive hold
 
     IERC20Upgradeable public token;
 
@@ -58,6 +62,11 @@ contract ReferralContract is Initializable, UUPSUpgradeable, OwnableUpgradeable 
 
         require(programs[_programCode].paused == false , "Program is pausing");
         require(programs[_programCode].tokenAddress != address(0) , "Program not found");
+
+        // Check start/end time
+        require(programs[_programCode].startTime <= block.timestamp && programs[_programCode].endTime >= block.timestamp, "Program not start or expired");
+        // Check allocation
+        require((programs[_programCode].tokenIncentive+programs[_programCode].incentiveHold+programs[_programCode].incentiveL0) <= programs[_programCode].tokenAllocation, "Program was spent all allocation");
 
         bytes memory haveReferralCode = bytes(_referrerCode);
         if (haveReferralCode.length > 0) {
@@ -88,8 +97,6 @@ contract ReferralContract is Initializable, UUPSUpgradeable, OwnableUpgradeable 
                 token = IERC20Upgradeable(tokenAddress);
                 // Assign new address to ReferralUser
                 rUserFromReferer[_programCode][msg.sender] = referrerAddress;
-                // User follow
-                userReferees[_programCode][referrerAddress].push(msg.sender);
 
                 // Pay for level up 1
                 // Hold incentive
@@ -97,6 +104,8 @@ contract ReferralContract is Initializable, UUPSUpgradeable, OwnableUpgradeable 
                     holdReferrer[_programCode].push(_referrerCode);
                 }
                 incentiveHold[_programCode][_referrerCode] += programs[_programCode].incentiveL0;
+                programs[_programCode].incentiveHold += programs[_programCode].incentiveL0;
+
                 //token.transfer(referrerAddress, programs[_programCode].incentiveL0);
 
                 // Check Level 1 up
@@ -108,6 +117,7 @@ contract ReferralContract is Initializable, UUPSUpgradeable, OwnableUpgradeable 
                         holdReferrer[_programCode].push(addressJoined[userL0]);
                     }
                     incentiveHold[_programCode][addressJoined[userL0]] += programs[_programCode].incentiveL1;
+                    programs[_programCode].incentiveHold += programs[_programCode].incentiveL1;
 
                     // token.transfer(userL0, programs[_programCode].incentiveL1);
 
@@ -120,6 +130,7 @@ contract ReferralContract is Initializable, UUPSUpgradeable, OwnableUpgradeable 
                             holdReferrer[_programCode].push(addressJoined[userL1]);
                         }
                         incentiveHold[_programCode][addressJoined[userL1]] += programs[_programCode].incentiveL2;
+                        programs[_programCode].incentiveHold += programs[_programCode].incentiveL2;
 
                         // token.transfer(userL1, programs[_programCode].incentiveL2);
                     }
@@ -133,6 +144,7 @@ contract ReferralContract is Initializable, UUPSUpgradeable, OwnableUpgradeable 
         userJoined[_uid] = msg.sender;
         addressJoined[msg.sender] = _uid;
         refereesProgram[_programCode].push(_uid); // List User joined
+        userReferees[_programCode][_referrerCode].push(_uid); // Referres joined to referrer
     }
 
     // Add new program
@@ -145,7 +157,12 @@ contract ReferralContract is Initializable, UUPSUpgradeable, OwnableUpgradeable 
             paused: false,
             incentiveL0: 2 * 10 ** 18 / 100,  // Default 0.02 token
             incentiveL1: 1 * 10 ** 18 / 100,  // Default 0.01 token
-            incentiveL2: 1 * 10 ** 18 / 1000 // Default 0.001 token
+            incentiveL2: 1 * 10 ** 18 / 1000, // Default 0.001 token
+            tokenAllocation: 0,
+            tokenIncentive: 0,
+            incentiveHold: 0,
+            startTime: 0,
+            endTime: 0
         });
 
     }
@@ -160,29 +177,22 @@ contract ReferralContract is Initializable, UUPSUpgradeable, OwnableUpgradeable 
         programs[_programCode].paused = _pause;
     }
 
-    function setIncentiveAmount(string memory _programCode, uint256 _amount1, uint256 _amount2, uint256 _amount3) public {
+    function updateProgram(string memory _programCode, uint256 _amount1, uint256 _amount2, uint256 _amount3 , uint256 _tokenAllocation, uint256 _startTime, uint256 _endTime
+    ) public {
         require(admins[msg.sender] == true, "Caller is not a approval user");
         programs[_programCode].incentiveL0 = _amount1;
         programs[_programCode].incentiveL1 = _amount2;
         programs[_programCode].incentiveL2 = _amount3;
+
+        programs[_programCode].tokenAllocation = _tokenAllocation;
+        programs[_programCode].startTime = _startTime;
+        programs[_programCode].endTime = _endTime;
     }
 
     function version() virtual pure public returns (string memory) {
         return "v1";
     }
 
-    /* function checkJoined(string memory programCode, address userAddress) public view returns (bool) {
-        return rUserFromReferer[programCode][userAddress] != address(0);
-    } */
-    /* function getInfoProgram(string memory programCode) public view returns (string memory code, address tokenAddress, uint256 incentiveL0, uint256 incentiveL1, uint256 incentiveL2, bool paused) {
-        Program memory p = programs[programCode];
-        return (p.code, p.tokenAddress, p.incentiveL0, p.incentiveL1, p.incentiveL2, p.paused);
-    } */
-    /* function leaveProgram(string memory programCode) public {
-        string memory uid = addressJoined[msg.sender];
-        require(uidJoined[programCode][uid] != address(0) , "Account not found");
-        uidJoined[programCode][uid] = address(0);
-    } */
     function removeJoinProgram(string memory _programCode, string memory _uid) public {
         require(admins[msg.sender] == true, "Caller is not a approval user");
         require(uidJoined[_programCode][_uid] != address(0) , "Account not found");
@@ -217,14 +227,13 @@ contract ReferralContract is Initializable, UUPSUpgradeable, OwnableUpgradeable 
             if (amount >0) {
                 // Transfer token
                 token.transfer(referrerAddress, amount);
-                incentiveProgram[_programCode] += amount;
+                programs[_programCode].tokenIncentive += amount;
+                incentivePaid[_programCode][uid] += amount;
+
                 denyIncentive(_programCode,uid);
             }
         }
-        // Clear Holder
-        /* for (uint i=0; i<holdReferrer[_programCode].length; i++) {
-            denyIncentive(_programCode,i);
-        } */
+        programs[_programCode].incentiveHold = 0;
     }
     // Remove incentive from holder
     function denyIncentive(string memory _programCode, string memory _uid) public {
@@ -246,25 +255,11 @@ contract ReferralContract is Initializable, UUPSUpgradeable, OwnableUpgradeable 
     function getJoiner(string memory _programCode) public view returns(string[] memory) {
         return refereesProgram[_programCode];
     }
+    function getJoinerReferees(string memory _programCode, string memory _uid) public view returns(string[] memory) {
+        return userReferees[_programCode][_uid];
+    }
     function getTotalJoiner(string memory _programCode) public view returns(uint) {
         return refereesProgram[_programCode].length;
     }
-
-    /* function removeIncentiveHold(string memory _programCode, uint _index) private {
-        for (uint i = _index; i < holdReferrer[_programCode].length-1; i++) {
-            holdReferrer[_programCode][i] = holdReferrer[_programCode][i+1];
-        }
-        delete holdReferrer[_programCode][holdReferrer[_programCode].length-1];
-        holdReferrer[_programCode].length--;
-    } */
-    /* function removeIncentiveHold(string memory _programCode, uint _index) private {
-
-        // Move the last element into the place to delete
-        if (holdReferrer[_programCode].length>1) {
-            holdReferrer[_programCode][_index] = holdReferrer[_programCode][holdReferrer[_programCode].length - 1];
-        }
-        // Remove the last element
-        holdReferrer[_programCode].pop();
-    } */
 
 }
