@@ -1,0 +1,112 @@
+// SPDX-License-Identifier: MIT
+pragma solidity 0.8.2;
+
+contract ReferralSingleContract {
+
+    // define event
+    event JoinProgram(string _uid, string _referCode);
+
+    mapping(address => bool) public admins;
+    address public addressAdminContract;
+
+    // Config programs
+    struct Program {
+        string code;
+        bool paused;
+        uint256 startTime;
+        uint256 endTime;
+    }
+
+    mapping(string => Program) public programs;
+
+    // Config users
+    mapping(string => mapping(string => address)) public uidJoined;// program code => uid => sender address
+    mapping(string => mapping(address => address[])) public refereesListAddress;  // program code => uid => referral code
+    mapping(string => address[]) public joinersAddress; // program code => address[]
+    mapping(string => mapping(address => address)) public rUserFromReferer; // program code => sender address => referrer address
+
+    // Check
+    mapping(string => address) public userJoined; // uid => user address
+    mapping(address => string) public addressJoined; // user address => uid
+
+    constructor(){
+        admins[msg.sender] = true;
+    }
+
+    function joinProgram(string memory _programCode, string memory _uid, string memory _referCode) public {
+        require(programs[_programCode].paused == false , "Program is pausing");
+        // Check end time
+        require(programs[_programCode].startTime <= block.timestamp && programs[_programCode].endTime >= block.timestamp, "Program has expired");
+
+        require(uidJoined[_programCode][_uid] == address(0) , "The user joined");
+
+        // Validate, check this address joined but uid not the same
+        if (rUserFromReferer[_programCode][msg.sender] != address(0)) {
+            require(keccak256(bytes(_uid)) == keccak256(bytes(addressJoined[msg.sender])) , "This uid used other address");
+        }
+
+        bytes memory haveReferralCode = bytes(_referCode);
+
+        if (haveReferralCode.length>0) {
+            address referrerAddress = uidJoined[_programCode][_referCode];
+
+            refereesListAddress[_programCode][referrerAddress].push(msg.sender);
+            // Save address of referrer
+            rUserFromReferer[_programCode][msg.sender] = referrerAddress;
+        }
+        uidJoined[_programCode][_uid] = msg.sender;
+        addressJoined[msg.sender] = _uid;
+        joinersAddress[_programCode].push(msg.sender);
+
+        emit JoinProgram(_uid, _referCode);
+    }
+
+    // Add new program
+    function addProgram(string memory _programCode, uint256 _startTime, uint256 _endTime) public {
+        require(admins[msg.sender] == true, "Caller is not a approval user");
+        require(programs[_programCode].endTime == 0 , "Program is existing");
+        programs[_programCode] = Program({
+            code: _programCode,
+            paused: false,
+            startTime: _startTime,
+            endTime: _endTime
+        });
+
+    }
+
+    function setPause(string memory _programCode, bool _pause) public {
+        require(admins[msg.sender] == true, "Caller is not a approval user");
+        programs[_programCode].paused = _pause;
+    }
+
+    function updateProgram(string memory _programCode, uint256 _startTime, uint256 _endTime) public {
+        require(admins[msg.sender] == true, "Caller is not a approval user");
+        programs[_programCode].startTime = _startTime;
+        programs[_programCode].endTime = _endTime;
+    }
+
+    function setAddressAdminContract(address _addressAdminContract) onlyOwner public {
+        addressAdminContract = _addressAdminContract;
+    }
+    function getProgram(string memory _programCode) public view returns(Program memory) {
+        return programs[_programCode];
+    }
+
+    function getJoinersAddress(string memory _programCode) public view returns(address[] memory) {
+        return joinersAddress[_programCode];
+    }
+    /* function getJoinerReferees(string memory _programCode, string memory _uid) public view returns(string[] memory) {
+        return refereesList[_programCode][_uid];
+    } */
+    function getJoinerRefereesAddress(string memory _programCode, address _address) public view returns(address[] memory) {
+        return refereesListAddress[_programCode][_address];
+    }
+    function setAdmin(address _adminAddress, bool _allow) public onlyOwner {
+        admins[_adminAddress] = _allow;
+    }
+
+    modifier onlyOwner() {
+        require(admins[msg.sender] == true, "Caller is not a approval user");
+        _;
+    }
+}

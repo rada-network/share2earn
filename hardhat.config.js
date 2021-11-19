@@ -62,7 +62,7 @@ module.exports = {
     },
   },
   gasReporter: {
-    enabled: false,
+    enabled: true,
     excludeContracts: ['RIRToken','MEOToken'],
     currency: 'USDT',
     gasPrice: 21,

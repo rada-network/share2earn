@@ -85,11 +85,11 @@ Build & Deploy BSC testnet | Referral Contract Single
 
 ```shell
 
-npx hardhat run scripts/ReferralContractSingle/deploy.js --network testnet
+npx hardhat run scripts/ReferralSingleContract/deploy.js --network testnet
 // Copy Proxy address to contractAddresses.js
 npx hardhat verify --network testnet 0xA34f456763C1283CcFBE693B48a9cd52ab517993 PGX 10000000000000000000 20000000000000000 1639838879
 
-npx hardhat run scripts/ReferralContractSingle/botJoinProgram.js --network testnet
+npx hardhat run scripts/ReferralSingleContract/botJoinProgram.js --network testnet
 
 
 ```

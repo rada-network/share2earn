@@ -8,7 +8,7 @@ async function main() {
   const network = hardhatArguments.network;
   const provider = ethers.provider;
   const referralAddress = referralAddresses[network];
-  const referralContract = await ethers.getContractAt("ReferralContractSingle",referralAddress);
+  const referralContract = await ethers.getContractAt("ReferralSingleContract",referralAddress);
 
   const startFrom = 0;
   const addr = addrs[startFrom];
