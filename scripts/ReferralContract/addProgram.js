@@ -10,8 +10,8 @@ async function main() {
   const referralAddress = referralAddresses[network];
 
   const referralContract = await ethers.getContractAt("ReferralContract",referralAddress);
-  await referralContract.addProgram("PGX",rirAddresses[network]);
-  console.log("PGX added");
+  await referralContract.addProgram("8",rirAddresses[network]);
+  console.log("8 added");
 
 }
 

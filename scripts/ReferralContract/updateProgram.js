@@ -10,7 +10,7 @@ async function main() {
   console.log("Change program information with the account:", deployer.address);
   console.log("With ReferralContract address:", referralAddress);
 
-  const program = "PGX";
+  const program = "8";
   const startTime = Math.floor(Date.now() / 1000);
   const endTime = Math.floor(Date.now() / 1000) + 10 * 86400;
 
