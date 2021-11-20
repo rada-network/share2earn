@@ -21,8 +21,8 @@ contract ReferralAdminContract is Initializable, UUPSUpgradeable, OwnableUpgrade
         uint256 incentiveL2;
         bool paused;
         uint256 tokenAllocation;
-        uint256 tokenIncentive;
-        uint256 incentiveHold;
+        uint256 tokenAmountIncentive;
+        uint256 incentiveAmountHold;
     }
 
     mapping(address => bool) public admins;
@@ -77,8 +77,8 @@ contract ReferralAdminContract is Initializable, UUPSUpgradeable, OwnableUpgrade
             incentiveL1: 1 * 10 ** 18 / 100,  // Default 0.01 token
             incentiveL2: 1 * 10 ** 18 / 1000, // Default 0.001 token
             tokenAllocation: 0,
-            tokenIncentive: 0,
-            incentiveHold: 0
+            tokenAmountIncentive: 0,
+            incentiveAmountHold: 0
         });
 
     }
@@ -89,8 +89,15 @@ contract ReferralAdminContract is Initializable, UUPSUpgradeable, OwnableUpgrade
     } */
 
     function setPause(string memory _programCode, bool _pause) public onlyAdmin {
-        // require(admins[msg.sender] == true, "Caller is not a approval user");
+        require(programs[_programCode].tokenAddress != address(0) , "Program not found");
+
+        Program memory program = programs[_programCode];
+
+        ReferralSingleContract referralContract = ReferralSingleContract(program.referralAddress);
+
         programs[_programCode].paused = _pause;
+        referralContract.setPause(_programCode,_pause);
+
     }
 
     function updateProgram(string memory _programCode, address _tokenAddress, address _referralAddress, uint256 _amount1, uint256 _amount2, uint256 _amount3 , uint256 _tokenAllocation) public onlyAdmin {
@@ -124,8 +131,7 @@ contract ReferralAdminContract is Initializable, UUPSUpgradeable, OwnableUpgrade
         require(programs[_programCode].tokenAddress != address(0) , "Program not found");
         Program memory program = programs[_programCode];
 
-        address tokenAddress = program.tokenAddress;
-        token = IERC20Upgradeable(tokenAddress);
+        require(((program.tokenAmountIncentive+program.incentiveAmountHold) <= program.tokenAllocation) , "Excess amount allocation");
 
         ReferralSingleContract referralContract = ReferralSingleContract(program.referralAddress);
 
@@ -136,10 +142,14 @@ contract ReferralAdminContract is Initializable, UUPSUpgradeable, OwnableUpgrade
             address joinerAddr = joinersAddress[i];
             address[] memory referres = referralContract.getJoinerRefereesAddress(_programCode,joinerAddr);
             if (referres.length > 0) {
-                uint amountIncentive = program.incentiveL0*referres.length;
-                if ((amountIncentive - incentivePaid[_programCode][joinerAddr])>=0){
-                    incentiveHold[_programCode][joinerAddr] = amountIncentive - incentivePaid[_programCode][joinerAddr];
-                    holders[_programCode].push(joinerAddr);
+                uint amountIncentive = program.incentiveL0 * referres.length;
+                if (denyUser[_programCode][joinerAddr] == false) {
+                    if ((amountIncentive - incentivePaid[_programCode][joinerAddr])>0){
+                        uint amount = amountIncentive - incentivePaid[_programCode][joinerAddr];
+                        incentiveHold[_programCode][joinerAddr] = amount;
+                        holders[_programCode].push(joinerAddr);
+                        program.incentiveAmountHold += amount;
+                    }
                 }
             }
         }
@@ -151,6 +161,9 @@ contract ReferralAdminContract is Initializable, UUPSUpgradeable, OwnableUpgrade
         require(programs[_programCode].tokenAddress != address(0) , "Program not found");
         Program memory program = programs[_programCode];
 
+        require((program.tokenAmountIncentive <= program.tokenAllocation) , "Excess amount allocation");
+
+
         address tokenAddress = program.tokenAddress;
         token = IERC20Upgradeable(tokenAddress);
 
@@ -159,16 +172,21 @@ contract ReferralAdminContract is Initializable, UUPSUpgradeable, OwnableUpgrade
             address referrerAddress = holders[_programCode][i];
             uint256 amount = incentiveHold[_programCode][referrerAddress];
             if (amount > 0 && denyUser[_programCode][referrerAddress] == false) {
-                // Transfer token
-                token.transfer(referrerAddress, amount);
-                programs[_programCode].tokenIncentive += amount;
-                incentivePaid[_programCode][referrerAddress] += amount;
+                if (program.tokenAmountIncentive <= program.tokenAllocation) {
+                    // Transfer token
+                    token.safeTransfer(referrerAddress, amount);
+                    programs[_programCode].tokenAmountIncentive += amount;
+                    incentivePaid[_programCode][referrerAddress] += amount;
 
-                // Empty hold incentive
+                    // Empty hold incentive
+                    incentiveHold[_programCode][referrerAddress] = 0;
+                }
+            } else {
                 incentiveHold[_programCode][referrerAddress] = 0;
             }
         }
-        programs[_programCode].incentiveHold = 0;
+        programs[_programCode].incentiveAmountHold = 0;
+        delete holders[_programCode];
     }
     // Remove incentive from holder
     function denyAddress(string memory _programCode, address _addr) public onlyAdmin {
@@ -207,6 +225,9 @@ contract ReferralAdminContract is Initializable, UUPSUpgradeable, OwnableUpgrade
 
         info = referralContract.getProgram(_programCode);
         return info;
+    }
+    function getTotalHolders(string memory _programCode) public view returns(uint) {
+        return holders[_programCode].length;
     }
     // TODO: set private
     /* function getJoiners(string memory _programCode) public view returns (string[] memory joiners) {
