@@ -15,6 +15,16 @@ async function main() {
   const adminContract = await ethers.getContractAt("ReferralAdminContract",adminAddress);
   await adminContract.addProgram(programCode, rirAddresses[network], referralAddress);
 
+  await adminContract.updateProgram(
+    programCode,
+    rirAddresses[network],
+    referralAddress,
+    ethers.utils.parseUnits("0.02", 18 ),
+    ethers.utils.parseUnits("0.01", 18 ),
+    ethers.utils.parseUnits("0.001", 18 ),
+    ethers.utils.parseUnits("10", 18 )
+    );
+
   console.log(programCode + " added");
 
 }

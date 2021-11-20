@@ -8,6 +8,7 @@ async function main() {
 
   const network = hardhatArguments.network;
   const adminAddress = adminAddresses[network];
+  const referralAddress = referralAddresses[network];
 
   console.log("Change program information with the account:", deployer.address);
   console.log("With ReferralAdminContract address:", adminAddress);
@@ -18,14 +19,14 @@ async function main() {
   await adminContract.updateProgram(
     programCode,
     rirAddresses[network],
-    referralAddresses,
+    referralAddress,
     ethers.utils.parseUnits("0.02", 18 ),
     ethers.utils.parseUnits("0.01", 18 ),
     ethers.utils.parseUnits("0.001", 18 ),
     ethers.utils.parseUnits("10", 18 )
     );
 
-  console.log("Changed", program);
+  console.log("Changed", programCode);
 }
 
 main()
