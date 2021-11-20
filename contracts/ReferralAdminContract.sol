@@ -12,6 +12,9 @@ import "./ReferralSingleContract.sol";
 contract ReferralAdminContract is Initializable, UUPSUpgradeable, OwnableUpgradeable {
     using SafeERC20Upgradeable for IERC20Upgradeable;
 
+    // define event
+    event ApproveAllIncentive(string _programCode);
+
     struct Program {
         string code;
         address tokenAddress;
@@ -187,6 +190,8 @@ contract ReferralAdminContract is Initializable, UUPSUpgradeable, OwnableUpgrade
         }
         programs[_programCode].incentiveAmountHold = 0;
         delete holders[_programCode];
+
+        emit ApproveAllIncentive(_programCode);
     }
     // Remove incentive from holder
     function denyAddress(string memory _programCode, address _addr) public onlyAdmin {

@@ -1,5 +1,4 @@
 const { ethers, upgrades, hardhatArguments } = require('hardhat');
-const { addresses: rirAddresses } = require('../RIRToken/tokenAddresses');
 
 async function main() {
   const [deployer] = await ethers.getSigners();
@@ -7,12 +6,15 @@ async function main() {
   const network = hardhatArguments.network;
 
   console.log("Deploying contracts with the account:", deployer.address);
+
   console.log("Account balance:", (await deployer.getBalance()).toString());
-  const ReferralSingleContract = await ethers.getContractFactory("ReferralSingleContract");
+  // console.log("With ValidUserContract address:", validUserAddress);
 
-  const contract = await ReferralSingleContract.deploy();
+  const ReferralAdminContract = await ethers.getContractFactory("ReferralAdminContract");
+  // const proxyContract = await upgrades.deployProxy(ReferralAdminContract, [validUserAddress], { kind: 'uups' });
+  const proxyContract = await upgrades.deployProxy(ReferralAdminContract, { kind: 'uups' });
 
-  console.log("Contract address:", contract.address);
+  console.log("Contract address:", proxyContract.address);
 }
 
 main()
