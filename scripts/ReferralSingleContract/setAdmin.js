@@ -17,6 +17,8 @@ async function main() {
   await referralContract.setAdmin("0xB2c8321fc63809DE7CfcBdaaCeF8aa798420D425",true); // Brave
   await referralContract.setAdmin("0xB5e68dC8BF76Da1b28baaA8Fe271AF24524d4AE8",true); // Brave 2
   await referralContract.setAdmin("0xeb52e06ed8dfb6007771A5194790773Ba4066BF3",true); // Tung Nguyen
+  await referralContract.setAdmin("0x445AEEd98b560697F3846AD8c757b6C62d2652ec",true); // Tung Nguyen
+
 
   console.log("Finished set Admins");
 }

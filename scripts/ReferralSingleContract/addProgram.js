@@ -7,7 +7,7 @@ async function main() {
   const network = hardhatArguments.network;
   const referralAddress = referralAddresses[network];
 
-  const programCode = "8";
+  const programCode = "10";
   const startTime = Math.floor(Date.now() / 1000) - 10 * 86400;
   const endTime = Math.floor(Date.now() / 1000) + 30 * 86400;
 
