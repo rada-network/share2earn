@@ -15,6 +15,7 @@ Build & Deploy BSC testnet | RIRToken (fake)
 ```shell
 npx hardhat run scripts/RIRToken/deploy.js --network testnet
 # Copy Token address to tokenAddresses.js
+# change new address at FrontEnd config
 ```
 
 Build & Deploy BSC testnet | Referral Single Contract

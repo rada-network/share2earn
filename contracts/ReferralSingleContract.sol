@@ -1,7 +1,11 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.2;
 
-contract ReferralSingleContract {
+import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
+import "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
+import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
+
+contract ReferralSingleContract is Initializable, UUPSUpgradeable, OwnableUpgradeable {
 
     // define event
     event JoinProgram(string _uid, string _referCode);
@@ -29,9 +33,17 @@ contract ReferralSingleContract {
     mapping(string => address) public userJoined; // uid => user address
     mapping(address => string) public addressJoined; // user address => uid
 
-    constructor(){
-        admins[msg.sender] = true;
+    function initialize() initializer public {
+        __Ownable_init();
+
+        // Grant the approval role to a specified account
+        admins[owner()] = true;
     }
+
+    /// @custom:oz-upgrades-unsafe-allow constructor
+    constructor() initializer {}
+
+    function _authorizeUpgrade(address) internal override onlyOwner {}
 
     function joinProgram(string memory _programCode, string memory _uid, string memory _referCode) public {
         require(programs[_programCode].paused == false , "Program is pausing");
@@ -85,7 +97,7 @@ contract ReferralSingleContract {
         programs[_programCode].endTime = _endTime;
     }
 
-    function setAddressAdminContract(address _addressAdminContract) onlyOwner public {
+    function setAddressAdminContract(address _addressAdminContract) onlyAdmin public {
         addressAdminContract = _addressAdminContract;
     }
     function getProgram(string memory _programCode) public view returns(Program memory) {
@@ -101,11 +113,14 @@ contract ReferralSingleContract {
     function getJoinerRefereesAddress(string memory _programCode, address _address) public view returns(address[] memory) {
         return refereesListAddress[_programCode][_address];
     }
-    function setAdmin(address _adminAddress, bool _allow) public onlyOwner {
+    function getTotalReferees(string memory _programCode, address _address) public view returns(uint) {
+        return refereesListAddress[_programCode][_address].length;
+    }
+    function setAdmin(address _adminAddress, bool _allow) public onlyAdmin {
         admins[_adminAddress] = _allow;
     }
 
-    modifier onlyOwner() {
+    modifier onlyAdmin() {
         require(admins[msg.sender] == true, "Caller is not a approval user");
         _;
     }

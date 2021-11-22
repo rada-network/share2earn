@@ -39,7 +39,9 @@ describe("Referral Admin Contract", function () {
     // const incentiveRate = ethers.utils.parseUnits( "0.02" , 18 );
 
     // Add program to Referral Contract
-    contractSingle = await ReferralSingleContract.deploy();
+    contractSingle = await upgrades.deployProxy(ReferralSingleContract, { kind: 'uups' });
+
+    // contractSingle = await ReferralSingleContract.deploy();
     // Set addr4 is Admin
     await contractSingle.setAdmin(addr4.address, true);
     await contractSingle.addProgram(programCode, startTime, endTime);

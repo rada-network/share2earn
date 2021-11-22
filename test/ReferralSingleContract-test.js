@@ -20,7 +20,9 @@ describe("Referral Single contract", function () {
     // const tokenAllocation = ethers.utils.parseUnits( "10" , 18 );
     // const incentiveRate = ethers.utils.parseUnits( "0.02" , 18 );
 
-    contract = await ReferralSingleContract.deploy();
+    // contract = await ReferralSingleContract.deploy();
+    contract = await upgrades.deployProxy(ReferralSingleContract, { kind: 'uups' });
+
 
     // Set addr4 is Admin
     await contract.setAdmin(addr4.address, true);
