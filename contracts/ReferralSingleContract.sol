@@ -21,12 +21,14 @@ contract ReferralSingleContract is Initializable, UUPSUpgradeable, OwnableUpgrad
     mapping(string => Program) public programs;
     // Config users
     mapping(string => mapping(string => address)) public uidJoined;// program code => uid => sender address
+    mapping(string => mapping(address => string)) public addressJoined;// program code => uid => sender address
     mapping(string => mapping(address => address[])) public refereesListAddress;  // program code => uid => referral code
-    mapping(string => address[]) public joinersAddress; // program code => address[]
     mapping(string => mapping(address => address)) public rUserFromReferer; // program code => sender address => referrer address
+
+    mapping(string => address[]) public joinersAddress; // program code => address[]
     // Check
-    mapping(string => address) public userJoined; // uid => user address
-    mapping(address => string) public addressJoined; // user address => uid
+    // mapping(string => address) public userJoined; // uid => user address
+    // mapping(address => string) public addressJoined; // user address => uid
 
     function initialize() initializer public {
         __Ownable_init();
@@ -46,10 +48,12 @@ contract ReferralSingleContract is Initializable, UUPSUpgradeable, OwnableUpgrad
         require(programs[_programCode].startTime <= block.timestamp && programs[_programCode].endTime >= block.timestamp, "Program has expired");
 
         require(uidJoined[_programCode][_uid] == address(0) , "The user joined");
+        bytes memory tempEmptyString = bytes(addressJoined[_programCode][msg.sender]); // Uses memory
+        require(tempEmptyString.length == 0 , "The address joined");
 
         // Validate, check this address joined but uid not the same
         if (rUserFromReferer[_programCode][msg.sender] != address(0)) {
-            require(keccak256(bytes(_uid)) == keccak256(bytes(addressJoined[msg.sender])) , "This uid used other address");
+            require(keccak256(bytes(_uid)) == keccak256(bytes(addressJoined[_programCode][msg.sender])) , "This uid used other address");
         }
 
         bytes memory haveReferralCode = bytes(_referCode);
@@ -62,7 +66,7 @@ contract ReferralSingleContract is Initializable, UUPSUpgradeable, OwnableUpgrad
             rUserFromReferer[_programCode][msg.sender] = referrerAddress;
         }
         uidJoined[_programCode][_uid] = msg.sender;
-        addressJoined[msg.sender] = _uid;
+        addressJoined[_programCode][msg.sender] = _uid;
         joinersAddress[_programCode].push(msg.sender);
 
         emit JoinProgram(_uid, _referCode);

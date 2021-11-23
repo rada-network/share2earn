@@ -197,13 +197,19 @@ contract ReferralAdminContract is Initializable, UUPSUpgradeable, OwnableUpgrade
     // Remove incentive from holder
     function denyAddress(string memory _programCode, address _addr) public onlyAdmin {
         // Check that the calling account has the approval role
-
         require(programs[_programCode].tokenAddress != address(0) , "Program not found");
 
         // Remove incentive
         denyUser[_programCode][_addr] = true;
+        incentiveHold[_programCode][_addr] = 0;
     }
+    function acceptAddress(string memory _programCode, address _addr) public onlyAdmin {
+        // Check that the calling account has the approval role
+        require(programs[_programCode].tokenAddress != address(0) , "Program not found");
 
+        // Remove incentive
+        denyUser[_programCode][_addr] = false;
+    }
     /* function getIncentiveHoldersCount(string memory _programCode) public view returns(uint) {
         return holdReferrer[_programCode].length;
     } */
