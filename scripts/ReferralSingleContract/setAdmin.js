@@ -1,5 +1,5 @@
 const { ethers, upgrades, hardhatArguments } = require('hardhat');
-const { addresses: referralAddresses } = require('./contractAddresses');
+const { addresses: referralAddresses } = require('./proxyAddresses');
 
 async function main() {
   const [deployer] = await ethers.getSigners();

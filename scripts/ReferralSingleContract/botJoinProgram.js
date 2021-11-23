@@ -1,6 +1,6 @@
 const crypto = require('crypto')
 const { ethers, upgrades, hardhatArguments } = require('hardhat');
-const { addresses: referralAddresses } = require('./contractAddresses');
+const { addresses: referralAddresses } = require('./proxyAddresses');
 
 async function main() {
   [owner, ...addrs] = await ethers.getSigners();

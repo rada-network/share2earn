@@ -10,14 +10,6 @@ BSC_API_KEY=
 MNEMONIC=
 ```
 
-Build & Deploy BSC testnet | RIRToken (fake)
-
-```shell
-npx hardhat run scripts/RIRToken/deploy.js --network testnet
-# Copy Token address to tokenAddresses.js
-# change new address at FrontEnd config
-```
-
 Build & Deploy BSC testnet | Referral Single Contract
 
 ```shell
@@ -41,8 +33,10 @@ npx hardhat run scripts/ReferralAdminContract/deploy.js --network testnet
 # Copy Proxy address to proxyAddresses.js
 # Top-up tokens
 npx hardhat run scripts/ReferralAdminContract/topUpContract.js --network testnet
+# Emergency Withdraw
+# npx hardhat run scripts/ReferralAdminContract/emergencyWithdraw.js --network testnet
 
-# Add program, change program code in source
+# Add program, change program code (projectID) in source
 npx hardhat run scripts/ReferralAdminContract/addProgram.js --network testnet
 
 # Set Admins
