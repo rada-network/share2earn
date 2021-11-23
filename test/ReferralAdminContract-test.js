@@ -60,9 +60,10 @@ describe("Referral Admin Contract", function () {
     await contractAdmin.updateProgram(programCode,
       rirToken.address,
       contractSingle.address,
-      ethers.utils.parseUnits( "0.02" , 18),
+      ethers.utils.parseUnits( "0.1" , 18),
       ethers.utils.parseUnits( "0.01" , 18),
       ethers.utils.parseUnits( "0.001" , 18),
+      ethers.utils.parseUnits( "2" , 18),
       ethers.utils.parseUnits( "10" , 18));
 
     await contractSingle.connect(addr1).joinProgram(programCode, uid1, "");
@@ -71,7 +72,6 @@ describe("Referral Admin Contract", function () {
     await contractSingle.connect(addr4).joinProgram(programCode, uid4 , uid2);
 
   });
-
 
   it('Deploy v1 and should set right owner', async function () {
     expect(await contractAdmin.admins(addr4.address)).to.equal(true);
@@ -90,8 +90,8 @@ describe("Referral Admin Contract", function () {
     await contractAdmin.connect(addr4).calculateIncentive(programCode);
 
     expect(await contractAdmin.getTotalHolders(programCode)).to.equal(2);
-    expect(await contractAdmin.incentiveHold(programCode,addr1.address)).to.equal(ethers.utils.parseUnits( "0.04" , 18 ));
-    expect(await contractAdmin.incentiveHold(programCode,addr2.address)).to.equal(ethers.utils.parseUnits( "0.02" , 18 ));
+    expect(await contractAdmin.incentiveHold(programCode,addr1.address)).to.equal(ethers.utils.parseUnits( "0.21" , 18 ));
+    expect(await contractAdmin.incentiveHold(programCode,addr2.address)).to.equal(ethers.utils.parseUnits( "0.1" , 18 ));
     expect(await contractAdmin.incentiveHold(programCode,addr3.address)).to.equal(0);
   });
 
@@ -106,12 +106,12 @@ describe("Referral Admin Contract", function () {
     expect(await contractAdmin.incentiveHold(programCode,addr1.address)).to.equal(0);
     expect(await contractAdmin.incentiveHold(programCode,addr2.address)).to.equal(0);
 
-    expect(await rirToken.balanceOf(addr1.address)).to.equal(ethers.utils.parseUnits( "0.04" , 18 ));
-    expect(await rirToken.balanceOf(addr2.address)).to.equal(ethers.utils.parseUnits( "0.02" , 18 ));
+    expect(await rirToken.balanceOf(addr1.address)).to.equal(ethers.utils.parseUnits( "0.21" , 18 ));
+    expect(await rirToken.balanceOf(addr2.address)).to.equal(ethers.utils.parseUnits( "0.1" , 18 ));
 
     const program = await contractAdmin.programs(programCode);
     expect(program.incentiveAmountHold).to.equal(0);
-    expect(program.tokenAmountIncentive).to.equal(ethers.utils.parseUnits( "0.06" , 18 ));
+    expect(program.tokenAmountIncentive).to.equal(ethers.utils.parseUnits( "0.31" , 18 ));
 
   });
 
@@ -128,28 +128,29 @@ describe("Referral Admin Contract", function () {
     await contractAdmin.connect(addr4).calculateIncentive(programCode);
 
     expect(await contractAdmin.getTotalHolders(programCode)).to.equal(1);
-    expect(await contractAdmin.incentiveHold(programCode,addr1.address)).to.equal(ethers.utils.parseUnits( "0.02" , 18 ));
+    expect(await contractAdmin.incentiveHold(programCode,addr1.address)).to.equal(ethers.utils.parseUnits( "0.1" , 18 ));
 
     // Approve
     await contractAdmin.connect(addr4).approveAllIncentive(programCode);
 
-    expect(await rirToken.balanceOf(addr1.address)).to.equal(ethers.utils.parseUnits( "0.06" , 18 ));
-    expect(await rirToken.balanceOf(addr2.address)).to.equal(ethers.utils.parseUnits( "0.02" , 18 ));
+    expect(await rirToken.balanceOf(addr1.address)).to.equal(ethers.utils.parseUnits( "0.31" , 18 ));
+    expect(await rirToken.balanceOf(addr2.address)).to.equal(ethers.utils.parseUnits( "0.1" , 18 ));
 
     const program = await contractAdmin.programs(programCode);
     expect(program.incentiveAmountHold).to.equal(0);
-    expect(program.tokenAmountIncentive).to.equal(ethers.utils.parseUnits( "0.08" , 18 ));
+    expect(program.tokenAmountIncentive).to.equal(ethers.utils.parseUnits( "0.41" , 18 ));
 
   });
 
-  it('Should not pay hold incentive if over allocation', async function () {
+  it('Should not pay hold incentive if over allocation of program', async function () {
 
     await contractAdmin.updateProgram(programCode,
       rirToken.address,
       contractSingle.address,
-      ethers.utils.parseUnits( "0.02" , 18),
+      ethers.utils.parseUnits( "0.1" , 18),
       ethers.utils.parseUnits( "0.01" , 18),
       ethers.utils.parseUnits( "0.001" , 18),
+      ethers.utils.parseUnits( "2" , 18),
       ethers.utils.parseUnits( "0.05" , 18));
 
     // Calculate incentive
@@ -162,6 +163,29 @@ describe("Referral Admin Contract", function () {
     // Calculate incentive
     await expect(contractAdmin.connect(addr4).calculateIncentive(programCode)).to.be.reverted;
     await expect(contractAdmin.connect(addr2).approveAllIncentive(programCode)).to.be.reverted;
+  });
+
+  it('Should not pay incentive if over allocation of per referrer', async function () {
+
+    await contractAdmin.updateProgram(programCode,
+      rirToken.address,
+      contractSingle.address,
+      ethers.utils.parseUnits( "0.1" , 18),
+      ethers.utils.parseUnits( "0.01" , 18),
+      ethers.utils.parseUnits( "0.001" , 18),
+      ethers.utils.parseUnits( "0.2" , 18),
+      ethers.utils.parseUnits( "10" , 18));
+
+    // Join more
+    await contractSingle.connect(addr5).joinProgram(programCode, uid5 , uid2);
+
+    // Calculate incentive
+    await contractAdmin.connect(addr4).calculateIncentive(programCode);
+    // Approve
+    await contractAdmin.connect(addr4).approveAllIncentive(programCode);
+
+    expect(await rirToken.balanceOf(addr1.address)).to.equal(ethers.utils.parseUnits( "0.2" , 18 ));
+    expect(await rirToken.balanceOf(addr2.address)).to.equal(ethers.utils.parseUnits( "0.2" , 18 ));
   });
 
   it('Should pause a program', async function () {
@@ -188,6 +212,7 @@ describe("Referral Admin Contract", function () {
       ethers.utils.parseUnits( "0.02" , 18),
       ethers.utils.parseUnits( "0.01" , 18),
       ethers.utils.parseUnits( "0.001" , 18),
+      ethers.utils.parseUnits( "2" , 18),
       ethers.utils.parseUnits( "5" , 18));
 
     const program = await contractAdmin.programs(programCode);
@@ -211,11 +236,11 @@ describe("Referral Admin Contract", function () {
     expect(await contractAdmin.incentiveHold(programCode,addr2.address)).to.equal(0);
 
     expect(await rirToken.balanceOf(addr1.address)).to.equal(0);
-    expect(await rirToken.balanceOf(addr2.address)).to.equal(ethers.utils.parseUnits( "0.02" , 18 ));
+    expect(await rirToken.balanceOf(addr2.address)).to.equal(ethers.utils.parseUnits( "0.1" , 18 ));
 
     const program = await contractAdmin.programs(programCode);
     expect(program.incentiveAmountHold).to.equal(0);
-    expect(program.tokenAmountIncentive).to.equal(ethers.utils.parseUnits( "0.02" , 18 ));
+    expect(program.tokenAmountIncentive).to.equal(ethers.utils.parseUnits( "0.1" , 18 ));
   });
 
 });

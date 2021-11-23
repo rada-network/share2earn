@@ -12,13 +12,10 @@ async function main() {
 
   const adminContract = await ethers.getContractAt("ReferralAdminContract",adminAddress);
 
-  await adminContract.setAdmin("0xAE51701F3eB7b897eB6EE5ecdf35c4fEE29BFAe6",true); // Chrome
-  await adminContract.setAdmin("0x329A3600DDAa362C9239d51A2bA171e1BAbe5369",true); // Firefox
-  await adminContract.setAdmin("0xB2c8321fc63809DE7CfcBdaaCeF8aa798420D425",true); // Brave
-  await adminContract.setAdmin("0xB5e68dC8BF76Da1b28baaA8Fe271AF24524d4AE8",true); // Brave 2
-  await adminContract.setAdmin("0xeb52e06ed8dfb6007771A5194790773Ba4066BF3",true); // Tung Nguyen
-  await adminContract.setAdmin("0x445AEEd98b560697F3846AD8c757b6C62d2652ec",true); // Tung Nguyen
-
+  // await adminContract.setAdmin("0xAE51701F3eB7b897eB6EE5ecdf35c4fEE29BFAe6",true); // Chrome Quang
+  // await adminContract.setAdmin("0x445AEEd98b560697F3846AD8c757b6C62d2652ec",true); // Tung Nguyen
+  // await adminContract.setAdmin("0xdcbEEb4a9a8C1778f6700c90608d8d57a0217976",true); // Anh Khanh
+  await adminContract.setAdmin("0x1f6A21AF5a882527af291227d0E6E72c372E5290",true); // Lữ
 
   console.log("Finished set Admins");
 }

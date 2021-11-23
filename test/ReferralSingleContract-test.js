@@ -15,8 +15,8 @@ describe("Referral Single contract", function () {
 
     [owner, addr1, addr2, addr3, addr4, addr5, ...addrs] = await ethers.getSigners();
 
-    const startTime = Math.floor(Date.now() / 1000) - 10000;
-    const endTime = Math.floor(Date.now() / 1000) + 10 * 86400;
+    const startTime = Math.floor(Date.now() / 1000) - 1 * 86400;
+    const endTime = Math.floor(Date.now() / 1000) + 15 * 86400;
     // const tokenAllocation = ethers.utils.parseUnits( "10" , 18 );
     // const incentiveRate = ethers.utils.parseUnits( "0.02" , 18 );
 
@@ -39,7 +39,7 @@ describe("Referral Single contract", function () {
     expect(await contract.admins(owner.address)).to.equal(true);
   });
 
-  it('Should let user join ', async function () {
+  it('Should let user join', async function () {
     const program = await contract.programs(programCode);
     await expect(program.code).to.equal(programCode);
 
@@ -138,6 +138,26 @@ describe("Referral Single contract", function () {
     await expect(contract.connect(addr2).joinProgram(programCode, uid3, uid1)).to.be.reverted;
   });
 
+
+  it('Should let user join level 1, level 2 and count', async function () {
+
+    const uid1 = "123123";
+    const uid2 = "456456";
+    const uid3 = "aad32d";
+    const uid4 = "hr2h65";
+
+    await contract.connect(addr1).joinProgram(programCode, uid1, "");
+    await contract.connect(addr2).joinProgram(programCode, uid2, uid1);
+    await contract.connect(addr3).joinProgram(programCode, uid3, uid2);
+    await contract.connect(addr4).joinProgram(programCode, uid4, uid2);
+    // const referess1 = await contract.getJoinerRefereesL1Address(programCode, addr1.address);
+    await expect(await contract.getTotalRefereesL1(programCode, addr1.address)).to.equal(1);
+    await expect(await contract.getTotalRefereesL2(programCode, addr1.address)).to.equal(2);
+
+  });
+
+
+
   // Require start at last time
   it('Should don\'t let user join expired program', async function () {
 
@@ -153,7 +173,5 @@ describe("Referral Single contract", function () {
 
     await expect(contract.connect(addr4).joinProgram(programCode, uid1, "")).to.be.reverted;
   });
-
-
 
 });

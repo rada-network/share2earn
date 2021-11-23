@@ -9,8 +9,10 @@ contract ReferralSingleContract is Initializable, UUPSUpgradeable, OwnableUpgrad
 
     // define event
     event JoinProgram(string _uid, string _referCode);
+
     mapping(address => bool) public admins;
     address public addressAdminContract;
+
     // Config programs
     struct Program {
         string code;
@@ -18,12 +20,15 @@ contract ReferralSingleContract is Initializable, UUPSUpgradeable, OwnableUpgrad
         uint256 startTime;
         uint256 endTime;
     }
+
     mapping(string => Program) public programs;
+
     // Config users
     mapping(string => mapping(string => address)) public uidJoined;// program code => uid => sender address
     mapping(string => mapping(address => address[])) public refereesListAddress;  // program code => uid => referral code
     mapping(string => address[]) public joinersAddress; // program code => address[]
     mapping(string => mapping(address => address)) public rUserFromReferer; // program code => sender address => referrer address
+
     // Check
     mapping(string => address) public userJoined; // uid => user address
     mapping(address => string) public addressJoined; // user address => uid
@@ -105,20 +110,12 @@ contract ReferralSingleContract is Initializable, UUPSUpgradeable, OwnableUpgrad
     /* function getJoinerReferees(string memory _programCode, string memory _uid) public view returns(string[] memory) {
         return refereesList[_programCode][_uid];
     } */
-    function getJoinerRefereesL1Address(string memory _programCode, address _address) public view returns(address[] memory) {
+    function getJoinerRefereesAddress(string memory _programCode, address _address) public view returns(address[] memory) {
         return refereesListAddress[_programCode][_address];
     }
 
-    function getTotalRefereesL1(string memory _programCode, address _address) public view returns(uint) {
+    function getTotalReferees(string memory _programCode, address _address) public view returns(uint) {
         return refereesListAddress[_programCode][_address].length;
-    }
-    function getTotalRefereesL2(string memory _programCode, address _address) public view returns(uint) {
-        address[] memory refereesL1 = refereesListAddress[_programCode][_address];
-        uint totalRefereesL2;
-        for (uint i=0;i<refereesL1.length;i++) {
-            totalRefereesL2 += refereesListAddress[_programCode][refereesL1[i]].length;
-        }
-        return totalRefereesL2;
     }
     function setAdmin(address _adminAddress, bool _allow) public onlyAdmin {
         admins[_adminAddress] = _allow;

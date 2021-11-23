@@ -60,6 +60,18 @@ module.exports = {
         count: 20
       }
     },
+    mainnet: {
+      url: "https://bsc-dataseed.binance.org/",
+      chainId: 56,
+      gas: 2100000,
+      gasPrice: 20000000000,
+      accounts: {
+        mnemonic: MNEMONIC,
+        path: "m/44'/60'/0'/0",
+        initialIndex: 0,
+        count: 20
+      }
+    },
   },
   gasReporter: {
     enabled: false,

@@ -22,6 +22,7 @@ async function main() {
     ethers.utils.parseUnits("0.02", 18 ),
     ethers.utils.parseUnits("0.01", 18 ),
     ethers.utils.parseUnits("0.001", 18 ),
+    ethers.utils.parseUnits("2", 18 ),
     ethers.utils.parseUnits("10", 18 )
     );
 
