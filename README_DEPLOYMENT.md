@@ -14,6 +14,10 @@ Build & Deploy BSC testnet | Referral Single Contract
 
 ```shell
 npx hardhat run scripts/ReferralSingleContract/deploy.js --network testnet
+# npx hardhat run scripts/ReferralSingleContract/getImplementationAddress.js --network testnet
+# Get implementation address above
+# npx hardhat verify --network testnet TODO_implementation_address
+
 # Copy Contract address to contractAddresses.js
 npx hardhat run scripts/ReferralSingleContract/addProgram.js --network testnet
 
