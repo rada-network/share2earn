@@ -154,6 +154,9 @@ describe("Referral Single contract", function () {
     await expect(await contract.getTotalRefereesL1(programCode, addr1.address)).to.equal(1);
     await expect(await contract.getTotalRefereesL2(programCode, addr1.address)).to.equal(2);
 
+    const total = await contract.getTotalRefereesL1L2(programCode, addr1.address);
+    await expect(total[0]).to.equal(ethers.utils.parseUnits( "1" , 0 ));
+    await expect(total[1]).to.equal(ethers.utils.parseUnits( "2" , 0 ));
   });
 
 

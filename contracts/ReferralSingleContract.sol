@@ -124,6 +124,12 @@ contract ReferralSingleContract is Initializable, UUPSUpgradeable, OwnableUpgrad
         }
         return totalRefereesL2;
     }
+    function getTotalRefereesL1L2(string memory _programCode, address _address) public view returns(uint[2] memory) {
+        uint[2] memory totalReferess;
+        totalReferess[0] = getTotalRefereesL1(_programCode,_address);
+        totalReferess[1] = getTotalRefereesL2(_programCode,_address);
+        return totalReferess;
+    }
     function setAdmin(address _adminAddress, bool _allow) public onlyAdmin {
         admins[_adminAddress] = _allow;
     }
