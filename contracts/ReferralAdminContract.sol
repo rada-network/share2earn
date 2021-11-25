@@ -56,7 +56,7 @@ contract ReferralAdminContract is Initializable, UUPSUpgradeable, OwnableUpgrade
     // Add new program
     function addProgram(string memory _programCode, address _tokenAddress, address _referralAddress) public onlyAdmin {
 
-        require(programs[_programCode].tokenAddress == address(0) , "Program is existing");
+        require(programs[_programCode].tokenAddress == address(0) , "Program has already existed");
         programs[_programCode] = Program({
             code: _programCode,
             tokenAddress: _tokenAddress,
@@ -124,7 +124,7 @@ contract ReferralAdminContract is Initializable, UUPSUpgradeable, OwnableUpgrade
 
 
 
-        require(((program.tokenAmountIncentive+program.incentiveAmountHold) <= program.tokenAllocation) , "Excess amount allocation");
+        require(((program.tokenAmountIncentive+program.incentiveAmountHold) <= program.tokenAllocation) , "Exceed allocation amount");
 
         ReferralSingleContract referralContract = ReferralSingleContract(program.referralAddress);
 
@@ -243,7 +243,7 @@ contract ReferralAdminContract is Initializable, UUPSUpgradeable, OwnableUpgrade
     }
 
     modifier onlyAdmin() {
-        require( (owner()==msg.sender || admins[msg.sender]  )== true, "Caller is not a approval user");
+        require( (owner()==msg.sender || admins[msg.sender]  )== true, "Caller is not an approved user");
         _;
     }
 
