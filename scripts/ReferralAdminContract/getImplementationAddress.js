@@ -8,6 +8,7 @@ async function main() {
 
   const address = await upgrades.erc1967.getImplementationAddress(proxyAddress);
 
+  console.log("Proxy address is:", proxyAddress);
   console.log("Implementation address is:", address);
 
 }
