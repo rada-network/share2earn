@@ -3,7 +3,7 @@ require("@nomiclabs/hardhat-etherscan");
 require('@nomiclabs/hardhat-ethers');
 require('@openzeppelin/hardhat-upgrades');
 require("hardhat-gas-reporter");
-require('dotenv').config()
+require('dotenv').config({ path: process.argv.includes('mainnet') ? '.env.mainnet' : '.env' })
 
 // a new App in its dashboard, and replace "KEY" with its key
 const RINKEBY_API_KEY = process.env.RINKEBY_API_KEY;
@@ -43,10 +43,14 @@ module.exports = {
     apiKey: BSC_API_KEY
   },
   networks: {
-    rinkeby: {
-      url: `https://rinkeby.infura.io/v3/${RINKEBY_API_KEY}`,
-      accounts: [`0x${PRIVATE_KEY}`],
+    localhost: {
+      url: "http://127.0.0.1:7545",
     },
+    hardhat: {},
+    // rinkeby: {
+    //   url: `https://rinkeby.infura.io/v3/${RINKEBY_API_KEY}`,
+    //   accounts: [`0x${PRIVATE_KEY}`],
+    // },
     testnet: {
       url: "https://data-seed-prebsc-2-s3.binance.org:8545/",
       chainId: 97,
@@ -75,7 +79,7 @@ module.exports = {
   },
   gasReporter: {
     enabled: false,
-    excludeContracts: ['RIRToken','MEOToken'],
+    excludeContracts: ['RIRToken', 'MEOToken'],
     currency: 'USDT',
     gasPrice: 21,
     coinmarketcap: "8a859b7f-a9d8-40fe-8d22-5f1c8525ed69"

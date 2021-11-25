@@ -13,16 +13,16 @@ async function main() {
   console.log("Change program information with the account:", deployer.address);
   console.log("With ReferralAdminContract address:", adminAddress);
 
-  const programCode = "10"; // program ID
+  const programCode = "1"; // program ID
 
   const adminContract = await ethers.getContractAt("ReferralAdminContract",adminAddress);
   await adminContract.updateProgram(
     programCode,
     rirAddresses[network],
     referralAddress,
-    ethers.utils.parseUnits("0.1", 18 ),
-    ethers.utils.parseUnits("0.01", 18 ),
-    ethers.utils.parseUnits("0.001", 18 ),
+    ethers.utils.parseUnits("0.02", 18 ),
+    ethers.utils.parseUnits("0.002", 18 ),
+    ethers.utils.parseUnits("0", 18 ),
     ethers.utils.parseUnits("2", 18 ),
     ethers.utils.parseUnits("200", 18 )
     );

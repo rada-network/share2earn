@@ -13,8 +13,8 @@ async function main() {
 
   // Sample top-up Tokens to contract
   const rirToken = await ethers.getContractAt("RIRToken",rirAddresses[network]);
-  await rirToken.transfer(adminAddress, ethers.utils.parseUnits( "5" , 18 ));
-  console.log("Top-up 5 RIR");
+  await rirToken.transfer(adminAddress, ethers.utils.parseUnits( "10" , 18 ));
+  console.log("Top-up 10 RIR");
 
   const ownerBalance = await rirToken.balanceOf(deployer.address);
   console.log(ethers.utils.formatUnits(ownerBalance,18));

@@ -10,6 +10,16 @@ BSC_API_KEY=
 MNEMONIC=
 ```
 
+The following tasks:
+
+```shell
+git pull # or using a tag to fetch latest code
+npx hardhat accounts
+npx hardhat compile
+npx hardhat clean
+npx hardhat test
+```
+
 Build & Deploy BSC testnet | Referral Single Contract
 
 ```shell
