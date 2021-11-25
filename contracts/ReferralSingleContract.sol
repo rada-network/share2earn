@@ -43,7 +43,7 @@ contract ReferralSingleContract is Initializable, UUPSUpgradeable, OwnableUpgrad
     function _authorizeUpgrade(address) internal override onlyOwner {}
 
     function joinProgram(string memory _programCode, string memory _uid, string memory _referCode) public {
-        require(programs[_programCode].paused == false , "Program is pausing");
+        require(programs[_programCode].paused == false , "Program has paused");
         // Check end time
         require(programs[_programCode].startTime <= block.timestamp && programs[_programCode].endTime >= block.timestamp, "Program has expired");
 
@@ -53,7 +53,7 @@ contract ReferralSingleContract is Initializable, UUPSUpgradeable, OwnableUpgrad
 
         // Validate, check this address joined but uid not the same
         if (rUserFromReferer[_programCode][msg.sender] != address(0)) {
-            require(keccak256(bytes(_uid)) == keccak256(bytes(addressJoined[_programCode][msg.sender])) , "This uid used other address");
+            require(keccak256(bytes(_uid)) == keccak256(bytes(addressJoined[_programCode][msg.sender])) , "This user id used by another address");
         }
 
         bytes memory haveReferralCode = bytes(_referCode);
@@ -74,8 +74,8 @@ contract ReferralSingleContract is Initializable, UUPSUpgradeable, OwnableUpgrad
 
     // Add new program
     function addProgram(string memory _programCode, uint256 _startTime, uint256 _endTime) public {
-        require(admins[msg.sender] == true, "Caller is not a approval user");
-        require(programs[_programCode].endTime == 0 , "Program is existing");
+        require(admins[msg.sender] == true, "Caller is not an approved user");
+        require(programs[_programCode].endTime == 0 , "Program has already existed");
         programs[_programCode] = Program({
             code: _programCode,
             paused: false,
@@ -86,12 +86,12 @@ contract ReferralSingleContract is Initializable, UUPSUpgradeable, OwnableUpgrad
     }
 
     function setPause(string memory _programCode, bool _pause) public {
-        require(admins[msg.sender] == true, "Caller is not a approval user");
+        require(admins[msg.sender] == true, "Caller is not an approved user");
         programs[_programCode].paused = _pause;
     }
 
     function updateProgram(string memory _programCode, uint256 _startTime, uint256 _endTime) public {
-        require(admins[msg.sender] == true, "Caller is not a approval user");
+        require(admins[msg.sender] == true, "Caller is not an approved user");
         programs[_programCode].startTime = _startTime;
         programs[_programCode].endTime = _endTime;
     }
@@ -135,7 +135,7 @@ contract ReferralSingleContract is Initializable, UUPSUpgradeable, OwnableUpgrad
     }
 
     modifier onlyAdmin() {
-        require(admins[msg.sender] == true, "Caller is not a approval user");
+        require(admins[msg.sender] == true, "Caller is not an approved user");
         _;
     }
 }
