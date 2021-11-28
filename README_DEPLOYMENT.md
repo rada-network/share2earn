@@ -64,3 +64,27 @@ npx hardhat run scripts/ReferralAdminContract/setAdmin.js --network testnet
 # npx hardhat verify --network testnet TODO_implementation_address
 
 ```
+
+Build & Deploy BSC testnet | Referral Admin Contract V2
+
+```shell
+
+npx hardhat run scripts/ReferralAdminContractV2/deploy.js --network testnet
+# Copy Contract address to proxyAddresses.js
+# Top-up tokens
+npx hardhat run scripts/ReferralAdminContractV2/topUpContract.js --network testnet
+# Emergency Withdraw
+# npx hardhat run scripts/ReferralAdminContractV2/emergencyWithdraw.js --network testnet
+
+# Add program, change program code (projectID) in source
+npx hardhat run scripts/ReferralAdminContractV2/addProgram.js --network testnet
+
+# Set Admins
+npx hardhat run scripts/ReferralAdminContractV2/setAdmin.js --network testnet
+
+# Change info program (if needle)
+# npx hardhat run scripts/ReferralAdminContractV2/updateProgram.js --network testnet
+
+# npx hardhat verify --network testnet TODO_after_deploy_address
+
+```

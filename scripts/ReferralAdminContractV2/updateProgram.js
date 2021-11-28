@@ -11,11 +11,11 @@ async function main() {
   const referralAddress = referralAddresses[network];
 
   console.log("Change program information with the account:", deployer.address);
-  console.log("With ReferralAdminContract address:", adminAddress);
+  console.log("With ReferralAdminContractV2 address:", adminAddress);
 
   const programCode = "8"; // program ID
 
-  const adminContract = await ethers.getContractAt("ReferralAdminContract",adminAddress);
+  const adminContract = await ethers.getContractAt("ReferralAdminContractV2",adminAddress);
   await adminContract.updateProgram(
     programCode,
     rirAddresses[network],

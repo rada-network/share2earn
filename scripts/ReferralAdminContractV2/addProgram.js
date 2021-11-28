@@ -10,12 +10,11 @@ async function main() {
   const adminAddress = adminAddresses[network];
   const referralAddress = referralAddresses[network];
 
-  console.log("Change program information with the account:", deployer.address);
-  console.log("With ReferralAdminContract address:", adminAddress);
+  const programCode = "8";
 
-  const programCode = "8"; // program ID
+  const adminContract = await ethers.getContractAt("ReferralAdminContractV2",adminAddress);
+  await adminContract.addProgram(programCode, rirAddresses[network], referralAddress);
 
-  const adminContract = await ethers.getContractAt("ReferralAdminContract",adminAddress);
   await adminContract.updateProgram(
     programCode,
     rirAddresses[network],
@@ -27,7 +26,8 @@ async function main() {
     ethers.utils.parseUnits("200", 18 )
     );
 
-  console.log("Changed", programCode);
+  console.log(programCode + " added");
+
 }
 
 main()

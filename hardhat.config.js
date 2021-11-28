@@ -54,8 +54,8 @@ module.exports = {
     testnet: {
       url: "https://data-seed-prebsc-2-s3.binance.org:8545/",
       chainId: 97,
-      gas: 2100000,
-      gasPrice: 20000000000,
+      // gas: 2100000,
+      // gasPrice: 20000000000,
       // accounts: [`0x${PRIVATE_KEY}`],
       accounts: {
         mnemonic: MNEMONIC,
@@ -67,8 +67,8 @@ module.exports = {
     mainnet: {
       url: "https://bsc-dataseed.binance.org/",
       chainId: 56,
-      gas: 2100000,
-      gasPrice: 20000000000,
+      // gas: 2100000,
+      // gasPrice: 20000000000,
       accounts: {
         mnemonic: MNEMONIC,
         path: "m/44'/60'/0'/0",
