@@ -152,8 +152,6 @@ contract ReferralAdminContractV2 is Initializable, UUPSUpgradeable, OwnableUpgra
         }
         require(token.balanceOf(address(this)) >= totalAmount , "Contract out of token");
 
-
-
         // Pay all incentive
         for (uint i=0; i < _addresses.length; i++) {
             address addr = _addresses[i];

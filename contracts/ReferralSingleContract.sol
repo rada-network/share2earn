@@ -138,4 +138,9 @@ contract ReferralSingleContract is Initializable, UUPSUpgradeable, OwnableUpgrad
         require(admins[msg.sender] == true, "Caller is not an approved user");
         _;
     }
+
+    // V2
+    /* function getTotalJoiners(string memory _programCode) public view returns(uint) {
+        return joinersAddress[_programCode].length;
+    } */
 }
