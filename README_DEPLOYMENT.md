@@ -85,6 +85,8 @@ npx hardhat run scripts/ReferralAdminContractV2/setAdmin.js --network testnet
 # Change info program (if needle)
 # npx hardhat run scripts/ReferralAdminContractV2/updateProgram.js --network testnet
 
-# npx hardhat verify --network testnet TODO_after_deploy_address
+
+# npx hardhat run scripts/ReferralAdminContractV2/getImplementationAddress.js --network testnet
+# npx hardhat verify --network testnet TODO_implementation_address
 
 ```

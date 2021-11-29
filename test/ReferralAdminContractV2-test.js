@@ -47,10 +47,10 @@ describe("Referral Admin Contract Version 2", function () {
     await contractSingle.addProgram(programCode, startTime, endTime);
 
 
-    contractAdmin = await ReferralAdminContractV2.deploy();
-    // contractAdmin = await upgrades.deployProxy(ReferralAdminContractV2, { kind: 'uups' });
-    await rirToken.transfer(contractAdmin.address, ethers.utils.parseUnits( "100" , 18 ));
-    await meoToken.transfer(contractAdmin.address, ethers.utils.parseUnits( "100" , 18 ));
+    // contractAdmin = await ReferralAdminContractV2.deploy();
+    contractAdmin = await upgrades.deployProxy(ReferralAdminContractV2, { kind: 'uups' });
+    await rirToken.transfer(contractAdmin.address, ethers.utils.parseUnits( "10" , 18 ));
+    await meoToken.transfer(contractAdmin.address, ethers.utils.parseUnits( "10" , 18 ));
 
     // Set addr4 is Admin
     await contractAdmin.setAdmin(addr4.address, true);
@@ -149,6 +149,11 @@ describe("Referral Admin Contract Version 2", function () {
     expect(await rirToken.balanceOf(addr2.address)).to.equal(ethers.utils.parseUnits( "0.1" , 18 ));
   });
 
+  it('Should not approve incentive if over amount', async function () {
+
+    await expect(contractAdmin.connect(addr4).approveIncentive(programCode,[addr1.address,addr2.address],[ethers.utils.parseUnits( "5" , 18 ),ethers.utils.parseUnits( "6" , 18 )])).to.be.reverted;
+  });
+
   it('Should pause a program', async function () {
     // Set Admin for Single contract
     contractSingle.connect(addr4).setAdmin(contractAdmin.address, true)
@@ -158,7 +163,6 @@ describe("Referral Admin Contract Version 2", function () {
     expect(program.paused).to.equal(true);
 
     const programSingle = await contractSingle.programs(programCode);
-
     expect(programSingle.paused).to.equal(true);
 
   });

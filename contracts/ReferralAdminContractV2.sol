@@ -1,28 +1,36 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.2;
 
-import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-import "@openzeppelin/contracts/access/Ownable.sol";
+// import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+// import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+// import "@openzeppelin/contracts/access/Ownable.sol";
+
+import "@openzeppelin/contracts-upgradeable/token/ERC20/IERC20Upgradeable.sol";
+import "@openzeppelin/contracts-upgradeable/token/ERC20/utils/SafeERC20Upgradeable.sol";
+import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
+import "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
+import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
+import "@openzeppelin/contracts-upgradeable/utils/math/SafeMathUpgradeable.sol";
 
 interface ReferralSingleContractI {
-    struct Program {
+    /* struct Program {
         string code;
         bool paused;
         uint256 startTime;
         uint256 endTime;
-    }
+    } */
 
     function setPause(string memory _programCode, bool _pause) external;
-    function getJoinersAddress(string memory _programCode) external view returns(address[] memory);
+    /* function getJoinersAddress(string memory _programCode) external view returns(address[] memory);
     function getTotalRefereesL1(string memory _programCode, address _address) external view returns(uint);
     function getTotalRefereesL2(string memory _programCode, address _address) external view returns(uint);
-    function getProgram(string memory _programCode) external view returns(Program memory);
-
+    function getProgram(string memory _programCode) external view returns(Program memory); */
 }
 
-contract ReferralAdminContractV2 is Ownable {
-    using SafeERC20 for IERC20;
+contract ReferralAdminContractV2 is Initializable, UUPSUpgradeable, OwnableUpgradeable {
+    using SafeERC20Upgradeable for IERC20Upgradeable;
+    using SafeMathUpgradeable for uint256;
+
 
     // define event
     event ApproveIncentive(string _programCode);
@@ -51,11 +59,19 @@ contract ReferralAdminContractV2 is Ownable {
     mapping(string => mapping(address => uint256)) public incentivePaid; // program code => referrer address => incentive paid
     mapping(string => mapping(address => bool)) public denyUser; // program code => uid => true
 
-    IERC20 public token;
+    IERC20Upgradeable public token;
 
-    constructor(){
+    function initialize() initializer public {
+        __Ownable_init();
+
+        // Grant the approval role to a specified account
         admins[owner()] = true;
     }
+
+    /// @custom:oz-upgrades-unsafe-allow constructor
+    constructor() initializer {}
+
+    function _authorizeUpgrade(address) internal override onlyOwner {}
 
     // Add new program
     function addProgram(string memory _programCode, address _tokenAddress, address _referralAddress) public onlyAdmin {
@@ -85,11 +101,10 @@ contract ReferralAdminContractV2 is Ownable {
     function setPause(string memory _programCode, bool _pause) public onlyAdmin {
         require(programs[_programCode].tokenAddress != address(0) , "Program not found");
 
-        Program memory program = programs[_programCode];
-
-        ReferralSingleContractI referralContract = ReferralSingleContractI(program.referralAddress);
-
         programs[_programCode].paused = _pause;
+
+        Program memory program = programs[_programCode];
+        ReferralSingleContractI referralContract = ReferralSingleContractI(program.referralAddress);
         referralContract.setPause(_programCode,_pause);
 
     }
@@ -112,7 +127,7 @@ contract ReferralAdminContractV2 is Ownable {
     }
 
     function emergencyWithdrawToken(address _tokenAddress, uint256 _amount) public onlyOwner {
-        token = IERC20(_tokenAddress);
+        token = IERC20Upgradeable(_tokenAddress);
 
         require(token.balanceOf(address(this)) >= _amount , "Amount exceeds");
         token.safeTransfer(owner(), _amount);
@@ -130,15 +145,17 @@ contract ReferralAdminContractV2 is Ownable {
 
         require((program.tokenAmountIncentive <= program.tokenAllocation) , "Excess amount allocation");
 
-        token = IERC20(program.tokenAddress);
+        token = IERC20Upgradeable(program.tokenAddress);
+        uint totalAmount = 0;
+        for (uint i=0; i < _addresses.length; i++) {
+            totalAmount = totalAmount + _amountList[i];
+        }
+        require(token.balanceOf(address(this)) >= totalAmount , "Contract out of token");
+
+
 
         // Pay all incentive
         for (uint i=0; i < _addresses.length; i++) {
-            /* address addr = _addresses[i];
-            int remainAmount = int(_amountList[i]);
-            int remainReward = int(program.maxPerReferral - incentivePaid[_programCode][addr]);
-            if (remainAmount > remainReward)
-                remainAmount = remainReward; */
             address addr = _addresses[i];
             uint remainAmount = _amountList[i];
             if (remainAmount > program.maxPerReferral)
@@ -165,7 +182,7 @@ contract ReferralAdminContractV2 is Ownable {
 
         incentivePaid[_programCode][_addr] = _amount;
     }
-    // Remove incentive from holder
+    // Ban address
     function denyAddress(string memory _programCode, address _addr) public onlyAdmin {
         // Check that the calling account has the approval role
         require(programs[_programCode].tokenAddress != address(0) , "Program not found");
@@ -174,6 +191,7 @@ contract ReferralAdminContractV2 is Ownable {
         denyUser[_programCode][_addr] = true;
         incentiveHold[_programCode][_addr] = 0;
     }
+    // Un-ban address
     function acceptAddress(string memory _programCode, address _addr) public onlyAdmin {
         // Check that the calling account has the approval role
         require(programs[_programCode].tokenAddress != address(0) , "Program not found");
@@ -183,7 +201,7 @@ contract ReferralAdminContractV2 is Ownable {
     }
 
     // Get info program
-    function getReferralInfo(string memory _programCode) public view returns (ReferralSingleContractI.Program memory info) {
+    /* function getReferralInfo(string memory _programCode) public view returns (ReferralSingleContractI.Program memory info) {
         require(programs[_programCode].referralAddress != address(0) , "Program not found");
 
         Program memory program = programs[_programCode];
@@ -191,13 +209,13 @@ contract ReferralAdminContractV2 is Ownable {
 
         info = referralContract.getProgram(_programCode);
         return info;
-    }
+    } */
     function getTotalHolders(string memory _programCode) public view returns(uint) {
         return holders[_programCode].length;
     }
 
     modifier onlyAdmin() {
-        require( (owner()==msg.sender || admins[msg.sender]  )== true, "Caller is not an approved user");
+        require( (owner()==msg.sender || admins[msg.sender])== true, "Caller is not an approved user");
         _;
     }
 

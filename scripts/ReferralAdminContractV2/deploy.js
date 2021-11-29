@@ -12,8 +12,8 @@ async function main() {
   // console.log("With ValidUserContract address:", validUserAddress);
 
   const ReferralAdminContractV2 = await ethers.getContractFactory("ReferralAdminContractV2");
-  // const proxyContract = await upgrades.deployProxy(ReferralAdminContractV2, { kind: 'uups' });
-  const proxyContract = await ReferralAdminContractV2.deploy();
+  const proxyContract = await upgrades.deployProxy(ReferralAdminContractV2, { kind: 'uups' });
+  // const proxyContract = await ReferralAdminContractV2.deploy();
 
   console.log("Contract address:", proxyContract.address);
   const balance2 = await deployer.getBalance();
