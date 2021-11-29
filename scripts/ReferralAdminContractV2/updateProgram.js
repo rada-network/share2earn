@@ -13,7 +13,7 @@ async function main() {
   console.log("Change program information with the account:", deployer.address);
   console.log("With ReferralAdminContractV2 address:", adminAddress);
 
-  const programCode = "8"; // program ID
+  const programCode = "1"; // program ID
 
   const adminContract = await ethers.getContractAt("ReferralAdminContractV2",adminAddress);
   await adminContract.updateProgram(
