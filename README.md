@@ -91,5 +91,7 @@ npx hardhat verify --network testnet 0xA34f456763C1283CcFBE693B48a9cd52ab517993 
 
 npx hardhat run scripts/ReferralSingleContract/botJoinProgram.js --network testnet
 
+npx hardhat run scripts/ReferralSingleContract/saveData.js --network testnet
+
 
 ```
