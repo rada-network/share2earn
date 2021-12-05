@@ -39,32 +39,6 @@ npx hardhat run scripts/ReferralSingleContract/setAdmin.js --network testnet
 
 ```
 
-Build & Deploy BSC testnet | Referral Admin Contract
-
-```shell
-
-npx hardhat run scripts/ReferralAdminContract/deploy.js --network testnet
-# Copy Proxy address to proxyAddresses.js
-# Top-up tokens
-npx hardhat run scripts/ReferralAdminContract/topUpContract.js --network testnet
-# Emergency Withdraw
-# npx hardhat run scripts/ReferralAdminContract/emergencyWithdraw.js --network testnet
-
-# Add program, change program code (projectID) in source
-npx hardhat run scripts/ReferralAdminContract/addProgram.js --network testnet
-
-# Set Admins
-npx hardhat run scripts/ReferralAdminContract/setAdmin.js --network testnet
-
-# Change info program (if needle)
-# npx hardhat run scripts/ReferralAdminContract/updateProgram.js --network testnet
-
-# npx hardhat run scripts/ReferralAdminContract/getImplementationAddress.js --network testnet
-# Get implementation address above
-# npx hardhat verify --network testnet TODO_implementation_address
-
-```
-
 Build & Deploy BSC testnet | Referral Admin Contract V2
 
 ```shell
@@ -89,4 +63,8 @@ npx hardhat run scripts/ReferralAdminContractV2/setAdmin.js --network testnet
 # npx hardhat run scripts/ReferralAdminContractV2/getImplementationAddress.js --network testnet
 # npx hardhat verify --network testnet TODO_implementation_address
 
+# Upgrade V3
+npx hardhat run scripts/ReferralAdminContractV2/upgradeContract_v3.js --network testnet
+
+# NOTE: Update LIMIT Claim 1 RIR
 ```

@@ -46,6 +46,16 @@ contract ReferralAdminContractV3 is Initializable, UUPSUpgradeable, OwnableUpgra
 
     IERC20Upgradeable public token;
 
+    // Upgrade v3
+    mapping(address => mapping(address => uint256)) public claimableApproved; // token address => address user => amount
+    mapping(address => uint256) public claimableAmount; // token address => amount
+    mapping(address => uint256) public claimedAmount; // token address => amount
+    mapping(address => uint256) public claimedCount; // token address => count
+    mapping(string => uint256) public allowClaimValue; // program code => value require
+
+    // define event
+    event ClaimIncentive(string _programCode, uint256 _amount);
+
     function initialize() initializer public {
         __Ownable_init();
 
@@ -130,8 +140,6 @@ contract ReferralAdminContractV3 is Initializable, UUPSUpgradeable, OwnableUpgra
 
         require((program.tokenAmountIncentive <= program.tokenAllocation) , "Excess amount allocation");
 
-        token = IERC20Upgradeable(program.tokenAddress);
-
         // Pay all incentive
         for (uint i=0; i < _addresses.length; i++) {
             address addr = _addresses[i];
@@ -146,10 +154,12 @@ contract ReferralAdminContractV3 is Initializable, UUPSUpgradeable, OwnableUpgra
 
             if (remainAmount > 0 && denyUser[_programCode][addr] == false) {
                 if (program.tokenAmountIncentive < program.tokenAllocation) {
-                    // Transfer token
-                    token.safeTransfer(addr, remainAmount);
+
+                    // Approve incentive
                     programs[_programCode].tokenAmountIncentive += remainAmount;
                     incentivePaid[_programCode][addr] += remainAmount;
+                    claimableApproved[program.tokenAddress][addr] += remainAmount;
+                    claimableAmount[program.tokenAddress] += remainAmount;
                 }
             }
         }
@@ -202,6 +212,7 @@ contract ReferralAdminContractV3 is Initializable, UUPSUpgradeable, OwnableUpgra
     }
 
 
+    // V3
     // Set incentive paid from old version
     function setAmountIncentive(string memory _programCode, uint _amount) public onlyAdmin {
         // Check that the calling account has the approval role
@@ -210,4 +221,37 @@ contract ReferralAdminContractV3 is Initializable, UUPSUpgradeable, OwnableUpgra
         programs[_programCode].tokenAmountIncentive = _amount;
     }
 
+    function updateLimitClaim(string memory _programCode, uint256 _amount) public onlyAdmin {
+        require(programs[_programCode].tokenAddress != address(0) , "Program not found");
+        allowClaimValue[_programCode] = _amount;
+    }
+
+    function claim(string memory _programCode) external {
+
+        require(programs[_programCode].tokenAddress != address(0) , "Program not found");
+        Program memory program = programs[_programCode];
+        uint256 claimAmount = claimableApproved[program.tokenAddress][msg.sender];
+        require( claimAmount > 0 , "Claimable not found");
+
+        require( claimAmount >= allowClaimValue[_programCode] , "Not enough amount");
+
+        token = IERC20Upgradeable(program.tokenAddress);
+
+        require(token.balanceOf(address(this)) >= claimAmount, "Not enough token");
+        require(programs[_programCode].tokenAllocation > claimedAmount[program.tokenAddress], "Over allocation token");
+
+        require(
+            token.transfer(msg.sender, claimAmount),
+            "ERC20 transfer failed - claim token"
+        );
+
+        claimableApproved[program.tokenAddress][msg.sender] = 0;
+
+        claimableAmount[program.tokenAddress] -= claimAmount;
+        claimedAmount[program.tokenAddress] += claimAmount;
+        claimedCount[program.tokenAddress] += 1;
+
+        emit ClaimIncentive(_programCode, claimAmount);
+
+    }
 }

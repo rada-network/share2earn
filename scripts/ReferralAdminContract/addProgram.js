@@ -10,7 +10,7 @@ async function main() {
   const adminAddress = adminAddresses[network];
   const referralAddress = referralAddresses[network];
 
-  const programCode = "8";
+  const programCode = "1";
 
   const adminContract = await ethers.getContractAt("ReferralAdminContract",adminAddress);
   await adminContract.addProgram(programCode, rirAddresses[network], referralAddress);
