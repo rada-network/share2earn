@@ -78,9 +78,9 @@ contract ReferralAdminContractV3 is Initializable, UUPSUpgradeable, OwnableUpgra
             referralAddress: _referralAddress,
             paused: false,
             incentiveLevel1: 2 * 10 ** 18 / 100,  // Default 0.02 token
-            incentiveLevel2: 1 * 10 ** 18 / 100,  // Default 0.01 token
-            incentiveLevel3: 1 * 10 ** 18 / 1000, // Default 0.001 token
-            maxPerReferral: 2 * 10 ** 18, // Default 0.001 token
+            incentiveLevel2: 2 * 10 ** 18 / 1000,  // Default 0.002 token
+            incentiveLevel3: 0, // Default 0 token
+            maxPerReferral: 2 * 10 ** 18, // Default 2 token
             tokenAllocation: 0,
             tokenAmountIncentive: 0,
             incentiveAmountHold: 0
@@ -175,13 +175,14 @@ contract ReferralAdminContractV3 is Initializable, UUPSUpgradeable, OwnableUpgra
         incentivePaid[_programCode][_addr] = _amount;
     }
     // Ban address
-    function denyAddress(string memory _programCode, address _addr) public onlyAdmin {
+    function denyAddresses(string memory _programCode, address[] memory _addresses) public onlyAdmin {
         // Check that the calling account has the approval role
         require(programs[_programCode].tokenAddress != address(0) , "Program not found");
 
-        // Remove incentive
-        denyUser[_programCode][_addr] = true;
-        incentiveHold[_programCode][_addr] = 0;
+        for (uint i=0; i < _addresses.length; i++) {
+            denyUser[_programCode][_addresses[i]] = true;
+            incentiveHold[_programCode][_addresses[i]] = 0;
+        }
     }
     // Un-ban address
     function acceptAddress(string memory _programCode, address _addr) public onlyAdmin {
@@ -231,8 +232,18 @@ contract ReferralAdminContractV3 is Initializable, UUPSUpgradeable, OwnableUpgra
         require(programs[_programCode].tokenAddress != address(0) , "Program not found");
         Program memory program = programs[_programCode];
         uint256 claimAmount = claimableApproved[program.tokenAddress][msg.sender];
-        require( claimAmount > 0 , "Claimable not found");
 
+        // Max claim 2
+        uint256 rateClaim = 1 * 10 ** 18;
+        if (claimAmount >= rateClaim * 2) { // 2 token
+            claimAmount = rateClaim * 2;
+        } else if (claimAmount >= rateClaim) { // 1 token
+            claimAmount = rateClaim;
+        } else {
+            claimAmount = 0;
+        }
+
+        require( claimAmount > 0 , "Claimable not found");
         require( claimAmount >= allowClaimValue[_programCode] , "Not enough amount");
 
         token = IERC20Upgradeable(program.tokenAddress);
@@ -245,7 +256,7 @@ contract ReferralAdminContractV3 is Initializable, UUPSUpgradeable, OwnableUpgra
             "ERC20 transfer failed - claim token"
         );
 
-        claimableApproved[program.tokenAddress][msg.sender] = 0;
+        claimableApproved[program.tokenAddress][msg.sender] -= claimAmount;
 
         claimableAmount[program.tokenAddress] -= claimAmount;
         claimedAmount[program.tokenAddress] += claimAmount;
