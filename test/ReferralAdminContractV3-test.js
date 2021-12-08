@@ -121,6 +121,57 @@ describe("Referral Admin Contract Version 3", function () {
 
   });
 
+  it('Should approve right incentive special case', async function () {
+
+    // Approve
+    await contractAdmin.connect(addr4).approveIncentive(programCode,[addr1.address],[50],[50]);
+
+    console.log(ethers.utils.formatUnits(await contractAdmin.connect(addr1).claimableApproved(rirToken.address,addr1.address),18));
+    console.log(ethers.utils.formatUnits(await contractAdmin.connect(addr1).incentivePaid(programCode,addr1.address),18));
+
+    // expect(await contractAdmin.connect(addr1).claimableApproved(rirToken.address,addr1.address)).to.equal(ethers.utils.parseUnits( "1.1" , 18 ));
+
+    // Claim token
+    await contractAdmin.connect(addr1).claim(programCode);
+    console.log('Claimed');
+    console.log(ethers.utils.formatUnits(await contractAdmin.connect(addr1).claimableApproved(rirToken.address,addr1.address),18));
+    console.log(ethers.utils.formatUnits(await contractAdmin.connect(addr1).incentivePaid(programCode,addr1.address),18));
+
+    // expect(await contractAdmin.connect(addr1).claimableApproved(rirToken.address,addr1.address)).to.equal(ethers.utils.parseUnits( "0.1" , 18 ));
+    await expect(contractAdmin.connect(addr1).claim(programCode)).to.be.reverted;
+
+    expect(await rirToken.balanceOf(addr1.address)).to.equal(ethers.utils.parseUnits( "1" , 18 ));
+
+    await contractAdmin.connect(addr4).approveIncentive(programCode,[addr1.address],[100],[50]);
+    console.log('Approved again');
+    console.log(ethers.utils.formatUnits(await contractAdmin.connect(addr1).claimableApproved(rirToken.address,addr1.address),18));
+    console.log(ethers.utils.formatUnits(await contractAdmin.connect(addr1).incentivePaid(programCode,addr1.address),18));
+
+    await contractAdmin.connect(addr1).claim(programCode);
+    console.log('Claimed again');
+    console.log(ethers.utils.formatUnits(await contractAdmin.connect(addr1).claimableApproved(rirToken.address,addr1.address),18));
+    console.log(ethers.utils.formatUnits(await contractAdmin.connect(addr1).incentivePaid(programCode,addr1.address),18));
+
+    await contractAdmin.connect(addr4).approveIncentive(programCode,[addr1.address],[200],[50]);
+    console.log('Approved again');
+    console.log(ethers.utils.formatUnits(await contractAdmin.connect(addr1).claimableApproved(rirToken.address,addr1.address),18));
+    console.log(ethers.utils.formatUnits(await contractAdmin.connect(addr1).incentivePaid(programCode,addr1.address),18));
+
+    await expect(contractAdmin.connect(addr1).claim(programCode)).to.be.reverted;
+    console.log('Claimed again');
+    console.log(ethers.utils.formatUnits(await contractAdmin.connect(addr1).claimableApproved(rirToken.address,addr1.address),18));
+    console.log(ethers.utils.formatUnits(await contractAdmin.connect(addr1).incentivePaid(programCode,addr1.address),18));
+
+
+    expect(await rirToken.balanceOf(addr1.address)).to.equal(ethers.utils.parseUnits( "2" , 18 ));
+
+    // expect(await contractAdmin.connect(addr1).claimableApproved(rirToken.address,addr1.address)).to.equal(ethers.utils.parseUnits( "1" , 18 ));
+    // expect(await contractAdmin.connect(addr1).incentivePaid(programCode,addr1.address)).to.equal(ethers.utils.parseUnits( "2" , 18 ));
+
+
+
+  });
+
   it('Should approve right incentive not over Referrer LIMIT', async function () {
 
     // Approve
@@ -262,7 +313,7 @@ describe("Referral Admin Contract Version 3", function () {
   it('Should deny an incentive', async function () {
 
     // Deny address
-    await contractAdmin.connect(addr4).denyAddress(programCode, [addr1.address]);
+    await contractAdmin.connect(addr4).denyAddresses(programCode, [addr1.address]);
     expect(await contractAdmin.denyUser(programCode, addr1.address)).to.equal(true);
 
     // Approve
