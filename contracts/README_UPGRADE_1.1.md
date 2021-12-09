@@ -1,4 +1,4 @@
-# V1.1
+# V2
 
 Add function getTotalJoiners
 

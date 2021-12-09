@@ -8,7 +8,7 @@ import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 contract ReferralSingleContractV2 is Initializable, UUPSUpgradeable, OwnableUpgradeable {
 
     // define event
-    event JoinProgram(string _code, string _uid, string _referCode);
+    event JoinProgram(string _programCode, string _uid, string _referCode);
     mapping(address => bool) public admins;
     address public addressAdminContract;
     // Config programs
@@ -61,9 +61,13 @@ contract ReferralSingleContractV2 is Initializable, UUPSUpgradeable, OwnableUpgr
         if (haveReferralCode.length>0) {
             address referrerAddress = uidJoined[_programCode][_referCode];
 
-            refereesListAddress[_programCode][referrerAddress].push(msg.sender);
-            // Save address of referrer
-            rUserFromReferer[_programCode][msg.sender] = referrerAddress;
+            if (referrerAddress != address(0)) {
+                refereesListAddress[_programCode][referrerAddress].push(msg.sender);
+                // Save address of referrer
+                rUserFromReferer[_programCode][msg.sender] = referrerAddress;
+            } else {
+                _referCode = '';
+            }
         }
         uidJoined[_programCode][_uid] = msg.sender;
         addressJoined[_programCode][msg.sender] = _uid;
