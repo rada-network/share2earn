@@ -95,24 +95,80 @@ describe("Referral Admin Contract Version 3", function () {
     await contractAdmin.connect(addr4).approveIncentive(programCode,[addr1.address,addr2.address],[2,1],[1,0]);
     expect(await contractAdmin.connect(addr1).claimableApproved(rirToken.address,addr1.address)).to.equal(ethers.utils.parseUnits( "0.042" , 18 ));
 
+
+    // Approve more 50 L1
+    await contractAdmin.connect(addr4).approveIncentive(programCode,[addr1.address],[52],[1]);
+
     // Claim token
     await contractAdmin.connect(addr1).claim(programCode);
-    await contractAdmin.connect(addr2).claim(programCode);
 
-    expect(await contractAdmin.connect(addr1).claimableApproved(rirToken.address,addr1.address)).to.equal(0);
-    expect(await contractAdmin.connect(addr2).claimableApproved(rirToken.address,addr2.address)).to.equal(0);
+    expect(await contractAdmin.connect(addr1).claimableApproved(rirToken.address,addr1.address)).to.equal(ethers.utils.parseUnits( "0.042" , 18 ));
+    expect(await contractAdmin.connect(addr2).claimableApproved(rirToken.address,addr2.address)).to.equal(ethers.utils.parseUnits( "0.02" , 18 ));
 
     await expect(contractAdmin.connect(addr1).claim(programCode)).to.be.reverted;
+    await expect(contractAdmin.connect(addr2).claim(programCode)).to.be.reverted;
 
-    expect(await rirToken.balanceOf(addr1.address)).to.equal(ethers.utils.parseUnits( "0.042" , 18 ));
-    expect(await rirToken.balanceOf(addr2.address)).to.equal(ethers.utils.parseUnits( "0.02" , 18 ));
 
-    expect(await contractAdmin.claimedCount(rirToken.address)).to.equal(2);
-    expect(await contractAdmin.claimedAmount(rirToken.address)).to.equal(ethers.utils.parseUnits( "0.062" , 18 ));
-    expect(await contractAdmin.claimableAmount(rirToken.address)).to.equal(0);
+    expect(await rirToken.balanceOf(addr1.address)).to.equal(ethers.utils.parseUnits( "1" , 18 ));
+    expect(await rirToken.balanceOf(addr2.address)).to.equal(0);
+
+    expect(await contractAdmin.claimedCount(rirToken.address)).to.equal(1);
+    expect(await contractAdmin.claimedAmount(rirToken.address)).to.equal(ethers.utils.parseUnits( "1" , 18 ));
+    expect(await contractAdmin.claimableAmount(rirToken.address)).to.equal(ethers.utils.parseUnits( "0.062" , 18 ));
 
     const program = await contractAdmin.programs(programCode);
-    expect(program.tokenAmountIncentive).to.equal(ethers.utils.parseUnits( "0.062" , 18 ));
+    expect(program.tokenAmountIncentive).to.equal(ethers.utils.parseUnits( "1.062" , 18 ));
+
+  });
+
+  it('Should approve right incentive special case', async function () {
+
+    // Approve
+    await contractAdmin.connect(addr4).approveIncentive(programCode,[addr1.address],[50],[50]);
+
+    console.log(ethers.utils.formatUnits(await contractAdmin.connect(addr1).claimableApproved(rirToken.address,addr1.address),18));
+    console.log(ethers.utils.formatUnits(await contractAdmin.connect(addr1).incentivePaid(programCode,addr1.address),18));
+
+    // expect(await contractAdmin.connect(addr1).claimableApproved(rirToken.address,addr1.address)).to.equal(ethers.utils.parseUnits( "1.1" , 18 ));
+
+    // Claim token
+    await contractAdmin.connect(addr1).claim(programCode);
+    console.log('Claimed');
+    console.log(ethers.utils.formatUnits(await contractAdmin.connect(addr1).claimableApproved(rirToken.address,addr1.address),18));
+    console.log(ethers.utils.formatUnits(await contractAdmin.connect(addr1).incentivePaid(programCode,addr1.address),18));
+
+    // expect(await contractAdmin.connect(addr1).claimableApproved(rirToken.address,addr1.address)).to.equal(ethers.utils.parseUnits( "0.1" , 18 ));
+    await expect(contractAdmin.connect(addr1).claim(programCode)).to.be.reverted;
+
+    expect(await rirToken.balanceOf(addr1.address)).to.equal(ethers.utils.parseUnits( "1" , 18 ));
+
+    await contractAdmin.connect(addr4).approveIncentive(programCode,[addr1.address],[100],[50]);
+    console.log('Approved again');
+    console.log(ethers.utils.formatUnits(await contractAdmin.connect(addr1).claimableApproved(rirToken.address,addr1.address),18));
+    console.log(ethers.utils.formatUnits(await contractAdmin.connect(addr1).incentivePaid(programCode,addr1.address),18));
+
+    await contractAdmin.connect(addr1).claim(programCode);
+    console.log('Claimed again');
+    console.log(ethers.utils.formatUnits(await contractAdmin.connect(addr1).claimableApproved(rirToken.address,addr1.address),18));
+    console.log(ethers.utils.formatUnits(await contractAdmin.connect(addr1).incentivePaid(programCode,addr1.address),18));
+
+    await contractAdmin.connect(addr4).approveIncentive(programCode,[addr1.address],[200],[50]);
+    console.log('Approved again');
+    console.log(ethers.utils.formatUnits(await contractAdmin.connect(addr1).claimableApproved(rirToken.address,addr1.address),18));
+    console.log(ethers.utils.formatUnits(await contractAdmin.connect(addr1).incentivePaid(programCode,addr1.address),18));
+
+    await expect(contractAdmin.connect(addr1).claim(programCode)).to.be.reverted;
+    console.log('Claimed again');
+    console.log(ethers.utils.formatUnits(await contractAdmin.connect(addr1).claimableApproved(rirToken.address,addr1.address),18));
+    console.log(ethers.utils.formatUnits(await contractAdmin.connect(addr1).incentivePaid(programCode,addr1.address),18));
+
+
+    expect(await rirToken.balanceOf(addr1.address)).to.equal(ethers.utils.parseUnits( "2" , 18 ));
+
+    // expect(await contractAdmin.connect(addr1).claimableApproved(rirToken.address,addr1.address)).to.equal(ethers.utils.parseUnits( "1" , 18 ));
+    // expect(await contractAdmin.connect(addr1).incentivePaid(programCode,addr1.address)).to.equal(ethers.utils.parseUnits( "2" , 18 ));
+
+
 
   });
 
@@ -120,13 +176,14 @@ describe("Referral Admin Contract Version 3", function () {
 
     // Approve
     await contractAdmin.connect(addr4).approveIncentive(programCode,[addr1.address,addr2.address],[200,1],[50,0]);
+    expect(await contractAdmin.connect(addr1).claimableApproved(rirToken.address,addr1.address)).to.equal(ethers.utils.parseUnits( "2" , 18 ));
 
     // Claim token
     await contractAdmin.connect(addr1).claim(programCode);
-    await contractAdmin.connect(addr2).claim(programCode);
+    await expect(contractAdmin.connect(addr2).claim(programCode)).to.be.reverted;
 
     expect(await rirToken.balanceOf(addr1.address)).to.equal(ethers.utils.parseUnits( "2" , 18 ));
-    expect(await rirToken.balanceOf(addr2.address)).to.equal(ethers.utils.parseUnits( "0.02" , 18 ));
+    expect(await rirToken.balanceOf(addr2.address)).to.equal(0);
 
     const program = await contractAdmin.programs(programCode);
     expect(program.tokenAmountIncentive).to.equal(ethers.utils.parseUnits( "2.02" , 18 ));
@@ -156,26 +213,32 @@ describe("Referral Admin Contract Version 3", function () {
   it('Should approve right incentive and paid more', async function () {
 
     // Approve
-    await contractAdmin.connect(addr4).approveIncentive(programCode,[addr1.address,addr2.address],[2,1],[1,0]);
+    await contractAdmin.connect(addr4).approveIncentive(programCode,[addr1.address,addr2.address],[52,101],[1,0]);
 
     // Claim token
     await contractAdmin.connect(addr1).claim(programCode);
     await contractAdmin.connect(addr2).claim(programCode);
 
-    expect(await rirToken.balanceOf(addr1.address)).to.equal(ethers.utils.parseUnits( "0.042" , 18 ));
-    expect(await rirToken.balanceOf(addr2.address)).to.equal(ethers.utils.parseUnits( "0.02" , 18 ));
+    expect(await rirToken.balanceOf(addr1.address)).to.equal(ethers.utils.parseUnits( "1" , 18 ));
+    expect(await rirToken.balanceOf(addr2.address)).to.equal(ethers.utils.parseUnits( "2" , 18 ));
 
-    await contractAdmin.connect(addr4).approveIncentive(programCode,[addr1.address],[3],[1]);
+    var program = await contractAdmin.programs(programCode);
+    expect(program.tokenAmountIncentive).to.equal(ethers.utils.parseUnits( "3.042" , 18 ));
+
+    await contractAdmin.connect(addr4).approveIncentive(programCode,[addr1.address],[102],[1]);
+    expect(await contractAdmin.connect(addr1).claimableApproved(rirToken.address,addr1.address)).to.equal(ethers.utils.parseUnits( "1" , 18 ));
 
     // Claim token
     await contractAdmin.connect(addr1).claim(programCode);
+    program = await contractAdmin.programs(programCode);
+    expect(program.tokenAmountIncentive).to.equal(ethers.utils.parseUnits( "4" , 18 ));
 
-    const program = await contractAdmin.programs(programCode);
-    expect(program.tokenAmountIncentive).to.equal(ethers.utils.parseUnits( "0.082" , 18 ));
+    expect(await contractAdmin.connect(addr1).claimableApproved(rirToken.address,addr1.address)).to.equal(0);
+    expect(await contractAdmin.connect(addr1).claimableApproved(rirToken.address,addr2.address)).to.equal(0);
 
   });
 
-  it('Should not pay hold incentive if over allocation of program', async function () {
+  it('Should not approve incentive if over allocation of program', async function () {
 
     await contractAdmin.updateProgram(programCode,
       rirToken.address,
@@ -184,12 +247,11 @@ describe("Referral Admin Contract Version 3", function () {
       ethers.utils.parseUnits( "0.002" , 18),
       ethers.utils.parseUnits( "0.000" , 18),
       ethers.utils.parseUnits( "2" , 18),
-      ethers.utils.parseUnits( "0.05" , 18));
+      ethers.utils.parseUnits( "1" , 18));
 
-    await contractAdmin.connect(addr4).approveIncentive(programCode,[addr1.address,addr2.address],[2,1],[1,0]);
+    await contractAdmin.connect(addr4).approveIncentive(programCode,[addr1.address],[50],[0]);
     // Claim token
-    await contractAdmin.connect(addr1).claim(programCode);
-    await contractAdmin.connect(addr2).claim(programCode);
+    // await contractAdmin.connect(addr1).claim(programCode);
 
     // Join more
     await contractSingle.connect(addr5).joinProgram(programCode, uid5 , uid1);
@@ -205,18 +267,17 @@ describe("Referral Admin Contract Version 3", function () {
       ethers.utils.parseUnits( "0.02" , 18),
       ethers.utils.parseUnits( "0.002" , 18),
       ethers.utils.parseUnits( "0.000" , 18),
-      ethers.utils.parseUnits( "0.04" , 18),
+      ethers.utils.parseUnits( "1" , 18),
       ethers.utils.parseUnits( "10" , 18));
 
-    await contractAdmin.connect(addr4).approveIncentive(programCode,[addr1.address,addr2.address],[2,1],[0,1]);
-    await contractAdmin.connect(addr4).approveIncentive(programCode,[addr1.address,addr2.address],[4,3],[0,4]);
+    await contractAdmin.connect(addr4).approveIncentive(programCode,[addr1.address,addr2.address],[52,101],[0,1]);
 
     // Claim token
     await contractAdmin.connect(addr1).claim(programCode);
     await contractAdmin.connect(addr2).claim(programCode);
 
-    expect(await rirToken.balanceOf(addr1.address)).to.equal(ethers.utils.parseUnits( "0.04" , 18 ));
-    expect(await rirToken.balanceOf(addr2.address)).to.equal(ethers.utils.parseUnits( "0.04" , 18 ));
+    expect(await rirToken.balanceOf(addr1.address)).to.equal(ethers.utils.parseUnits( "1" , 18 ));
+    expect(await rirToken.balanceOf(addr2.address)).to.equal(ethers.utils.parseUnits( "1" , 18 ));
   });
 
   it('Should pause a program', async function () {
@@ -252,21 +313,21 @@ describe("Referral Admin Contract Version 3", function () {
   it('Should deny an incentive', async function () {
 
     // Deny address
-    await contractAdmin.connect(addr4).denyAddress(programCode, addr1.address);
+    await contractAdmin.connect(addr4).denyAddresses(programCode, [addr1.address]);
     expect(await contractAdmin.denyUser(programCode, addr1.address)).to.equal(true);
 
     // Approve
-    await contractAdmin.connect(addr4).approveIncentive(programCode,[addr1.address,addr2.address],[2,1],[0,1]);
+    await contractAdmin.connect(addr4).approveIncentive(programCode,[addr1.address,addr2.address],[2,50],[0,50]);
 
     // Claim token
     await expect(contractAdmin.connect(addr1).claim(programCode)).to.be.reverted;
     await contractAdmin.connect(addr2).claim(programCode);
 
     expect(await rirToken.balanceOf(addr1.address)).to.equal(0);
-    expect(await rirToken.balanceOf(addr2.address)).to.equal(ethers.utils.parseUnits( "0.022" , 18 ));
+    expect(await rirToken.balanceOf(addr2.address)).to.equal(ethers.utils.parseUnits( "1" , 18 ));
 
     const program = await contractAdmin.programs(programCode);
-    expect(program.tokenAmountIncentive).to.equal(ethers.utils.parseUnits( "0.022" , 18 ));
+    expect(program.tokenAmountIncentive).to.equal(ethers.utils.parseUnits( "1.1" , 18 ));
   });
 
 });
