@@ -10,7 +10,7 @@ async function main() {
   const adminAddress = adminAddresses[network];
   const referralAddress = referralAddresses[network];
 
-  const programCode = "8";
+  const programCode = "18";
 
   const adminContract = await ethers.getContractAt("ReferralAdminContractV2",adminAddress);
   await adminContract.addProgram(programCode, rirAddresses[network], referralAddress);
@@ -19,10 +19,10 @@ async function main() {
     programCode,
     rirAddresses[network],
     referralAddress,
-    ethers.utils.parseUnits("0.02", 18 ),
-    ethers.utils.parseUnits("0.002", 18 ),
+    ethers.utils.parseUnits("0.01", 18 ),
+    ethers.utils.parseUnits("0.001", 18 ),
     ethers.utils.parseUnits("0", 18 ),
-    ethers.utils.parseUnits("2", 18 ),
+    ethers.utils.parseUnits("1", 18 ),
     ethers.utils.parseUnits("200", 18 )
     );
 
