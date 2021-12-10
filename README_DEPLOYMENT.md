@@ -34,6 +34,7 @@ npx hardhat run scripts/ReferralSingleContract/addProgram.js --network testnet
 # Set Admins
 npx hardhat run scripts/ReferralSingleContract/setAdmin.js --network testnet
 # Upgrade V2
+npx hardhat run scripts/ReferralSingleContract/upgradeContract_prepare_v2.js --network testnet
 npx hardhat run scripts/ReferralSingleContract/upgradeContract_v2.js --network testnet
 
 # Change info program (if needle)
